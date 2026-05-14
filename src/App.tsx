@@ -479,9 +479,9 @@ function GuestInfoScreen() {
   const { t } = useI18n();
   const items = [
     [t.guest.wifiTitle, t.guest.wifiText],
-    [t.guest.poolTitle, t.guest.poolText],
+    [t.guest.checkinTitle, t.guest.checkinText],
     [t.guest.checkoutTitle, t.guest.checkoutText],
-    [t.guest.supportTitle, t.guest.supportText]
+    [t.guest.houseRulesTitle, t.guest.houseRulesText]
   ];
 
   return (
@@ -491,7 +491,7 @@ function GuestInfoScreen() {
           <div key={title} className="glass-panel">
             <BookOpen size={32} className="mb-8 text-villa-gold" />
             <h3 className="text-3xl font-semibold text-villa-pearl">{title}</h3>
-            <p className="mt-4 text-xl leading-9 text-villa-mist">{text}</p>
+            <p className="mt-4 whitespace-pre-line text-xl leading-9 text-villa-mist">{text}</p>
           </div>
         ))}
       </div>

@@ -89,14 +89,15 @@ export const translations = {
     guest: {
       title: 'מידע לאורחים',
       subtitle: 'פרטים חשובים לשהייה רגועה',
-      wifiTitle: 'WiFi',
-      wifiText: 'שם הרשת והסיסמה יתווספו בטאבלט המקומי.',
-      poolTitle: 'בריכה',
-      poolText: 'יש להשאיר ילדים בהשגחת מבוגר בלבד.',
-      checkoutTitle: 'יציאה',
-      checkoutText: 'כיבוי כללי זמין במסך הבית לפני עזיבה.',
-      supportTitle: 'תמיכה',
-      supportText: 'לכל תקלה, פנו לצוות האירוח במספר שיוגדר במקום.'
+      wifiTitle: 'Wi-Fi',
+      wifiText: 'רשת: RoyalWaterVilla\nסיסמה: 123456789',
+      checkinTitle: 'צ׳ק-אין',
+      checkinText: '15:00',
+      checkoutTitle: 'צ׳ק-אאוט',
+      checkoutText: '10:00',
+      houseRulesTitle: 'כללי הבית',
+      houseRulesText:
+        'אין לשים מוזיקה בווליום גבוה\nאין לקפוץ לבריכה\nיש להשגיח על ילדים בקרבת הבריכה\nיש לשמור על הציוד והמתקנים במתחם'
     },
     areas: {
       living: 'סלון',
@@ -194,14 +195,15 @@ export const translations = {
     guest: {
       title: 'Guest Info',
       subtitle: 'Helpful details for a relaxed stay',
-      wifiTitle: 'WiFi',
-      wifiText: 'The network name and password will be added on the local tablet.',
-      poolTitle: 'Pool',
-      poolText: 'Children must remain under adult supervision.',
+      wifiTitle: 'Wi-Fi',
+      wifiText: 'Network: RoyalWaterVilla\nPassword: 123456789',
+      checkinTitle: 'Check-in',
+      checkinText: '15:00',
       checkoutTitle: 'Checkout',
-      checkoutText: 'The main turn-off control is available on the home screen before leaving.',
-      supportTitle: 'Support',
-      supportText: 'For any issue, contact the hosting team using the number provided on site.'
+      checkoutText: '10:00',
+      houseRulesTitle: 'House Rules',
+      houseRulesText:
+        'Do not play music at high volume\nDo not jump into the pool\nChildren must be supervised near the pool\nPlease take care of the equipment and facilities'
     },
     areas: {
       living: 'Living Room',
@@ -299,14 +301,15 @@ export const translations = {
     guest: {
       title: 'Infos Invités',
       subtitle: 'Informations utiles pour un séjour tranquille',
-      wifiTitle: 'WiFi',
-      wifiText: 'Le nom du réseau et le mot de passe seront ajoutés sur la tablette locale.',
-      poolTitle: 'Piscine',
-      poolText: 'Les enfants doivent rester sous la surveillance d’un adulte.',
+      wifiTitle: 'Wi-Fi',
+      wifiText: 'Réseau : RoyalWaterVilla\nMot de passe : 123456789',
+      checkinTitle: 'Arrivée',
+      checkinText: '15:00',
       checkoutTitle: 'Départ',
-      checkoutText: "La commande d'extinction générale est disponible sur l'écran d'accueil avant de partir.",
-      supportTitle: 'Assistance',
-      supportText: "En cas de problème, contactez l'équipe d'accueil au numéro indiqué sur place."
+      checkoutText: '10:00',
+      houseRulesTitle: 'Règles de la maison',
+      houseRulesText:
+        'Ne pas mettre la musique à un volume élevé\nNe pas sauter dans la piscine\nLes enfants doivent être surveillés près de la piscine\nMerci de respecter les équipements et installations'
     },
     areas: {
       living: 'Salon',
