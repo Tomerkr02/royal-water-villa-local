@@ -16,6 +16,7 @@ import {
   Palmtree,
   Plus,
   Power,
+  RefreshCw,
   Sparkles,
   Sun,
   Waves,
@@ -178,10 +179,16 @@ function DeviceTile({ device }: { device: Device }) {
   const Icon = areaIcons[device.area];
 
   return (
-    <motion.div layout className={`glass-panel device-tile ${isOn ? 'device-on' : ''}`}>
+    <motion.div
+      layout
+      whileHover={{ y: -3 }}
+      whileTap={{ scale: 0.985 }}
+      transition={{ duration: 0.18 }}
+      className={`glass-panel device-tile ${isOn ? 'device-on' : ''}`}
+    >
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-3">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 text-villa-gold">
+          <div className="device-icon flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 text-villa-gold">
             <Icon size={28} />
           </div>
           <div>
@@ -249,7 +256,7 @@ function HomeScreen({ goTo }: { goTo: (screen: Screen) => void }) {
   const states = useControlStore((state) => state.states);
   const turnOffAll = useControlStore((state) => state.turnOffAll);
   const isShabbatEnabled = useShabbatStore((state) => state.isEnabled);
-  const activeCount = devices.filter((device) => states?.[device.id]?.isOn).length;
+  const activeCount = Object.values(states ?? {}).filter((state) => state.isOn).length;
 
   return (
     <ScreenFrame title={t.home.title} subtitle={t.home.subtitle}>
@@ -290,9 +297,14 @@ function HomeScreen({ goTo }: { goTo: (screen: Screen) => void }) {
               </p>
             ) : null}
           </button>
-          <div className="glass-panel">
-            <p className="text-lg text-villa-mist">{t.home.activeDevices}</p>
-            <p className="mt-4 text-6xl font-semibold text-villa-pearl">{activeCount}</p>
+          <div className="glass-panel active-devices-card">
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-lg text-villa-mist">{t.home.activeDevices}</p>
+              <span className={activeCount > 0 ? 'status-on rounded-full px-3 py-1 text-sm font-bold' : 'status-off rounded-full px-3 py-1 text-sm font-bold'}>
+                {activeCount > 0 ? t.common.deviceOn : t.common.deviceOff}
+              </span>
+            </div>
+            <p className="active-devices-count mt-4 text-6xl font-semibold text-villa-pearl">{activeCount}</p>
           </div>
         </section>
       </div>
@@ -303,10 +315,25 @@ function HomeScreen({ goTo }: { goTo: (screen: Screen) => void }) {
 function LightingScreen() {
   const { t } = useI18n();
   const devices = useControlStore((state) => state.devices);
+  const loadDevices = useControlStore((state) => state.loadDevices);
+  const isLoading = useControlStore((state) => state.isLoading);
   const grouped = useMemo(() => groupByArea(devices), [devices]);
 
   return (
     <ScreenFrame title={t.lighting.title} subtitle={t.lighting.subtitle}>
+      <div className="mb-5 flex justify-end">
+        <button
+          type="button"
+          className="refresh-button"
+          onClick={() => void loadDevices()}
+          disabled={isLoading}
+          aria-label={t.common.refresh}
+          title={t.common.refresh}
+        >
+          <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
+          <span>{t.common.refresh}</span>
+        </button>
+      </div>
       <div className="space-y-8">
         {areaOrder().map((area) =>
           grouped[area]?.length ? (

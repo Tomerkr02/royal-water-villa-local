@@ -69,11 +69,16 @@ span {
 }
 
 .glass-panel {
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 24px;
-  background: linear-gradient(145deg, rgba(27, 23, 18, 0.78), rgba(13, 12, 10, 0.66));
-  box-shadow: 0 24px 90px rgba(0, 0, 0, 0.34);
-  backdrop-filter: blur(24px);
+  background:
+    linear-gradient(145deg, rgba(37, 32, 24, 0.78), rgba(13, 12, 10, 0.68)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 44%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 24px 90px rgba(0, 0, 0, 0.36);
+  backdrop-filter: blur(28px) saturate(1.15);
   padding: 24px;
 }
 
@@ -107,6 +112,7 @@ span {
 
 .device-tile {
   min-height: 210px;
+  isolation: isolate;
   transition:
     border-color 180ms ease,
     transform 180ms ease,
@@ -114,12 +120,43 @@ span {
     box-shadow 180ms ease;
 }
 
+.device-tile::before {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  z-index: -1;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 36%);
+  opacity: 0.75;
+  pointer-events: none;
+}
+
 .device-on {
-  border-color: rgba(215, 180, 106, 0.7);
-  background: linear-gradient(145deg, rgba(62, 48, 26, 0.82), rgba(20, 17, 12, 0.76));
+  border-color: rgba(234, 198, 121, 0.82);
+  background:
+    radial-gradient(circle at 16% 18%, rgba(215, 180, 106, 0.2), transparent 34%),
+    linear-gradient(145deg, rgba(66, 50, 25, 0.86), rgba(18, 15, 10, 0.78));
   box-shadow:
-    0 24px 90px rgba(0, 0, 0, 0.34),
-    0 0 42px rgba(215, 180, 106, 0.22);
+    inset 0 1px 0 rgba(255, 236, 188, 0.16),
+    0 26px 96px rgba(0, 0, 0, 0.38),
+    0 0 0 1px rgba(215, 180, 106, 0.12),
+    0 0 48px rgba(215, 180, 106, 0.28);
+}
+
+.device-icon {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition:
+    background 180ms ease,
+    box-shadow 180ms ease,
+    color 180ms ease;
+}
+
+.device-on .device-icon {
+  background: rgba(215, 180, 106, 0.18);
+  color: #f5d991;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 0 30px rgba(215, 180, 106, 0.22);
 }
 
 .status-on,
@@ -128,14 +165,25 @@ span {
 }
 
 .status-on {
-  border-color: rgba(215, 180, 106, 0.42);
-  background: rgba(215, 180, 106, 0.18);
-  color: #f5d991;
+  border-color: rgba(215, 180, 106, 0.48);
+  background: linear-gradient(180deg, rgba(215, 180, 106, 0.22), rgba(215, 180, 106, 0.12));
+  color: #ffe3a4;
+  box-shadow: 0 0 18px rgba(215, 180, 106, 0.14);
 }
 
 .status-off {
   background: rgba(255, 255, 255, 0.08);
   color: #9ca4a5;
+}
+
+.toggle-switch {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.toggle-switch[aria-pressed='true'] {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 0 28px rgba(215, 180, 106, 0.22);
 }
 
 .nav-button,
@@ -181,6 +229,55 @@ span {
   padding: 0 24px;
   font-size: 20px;
   font-weight: 600;
+}
+
+.refresh-button {
+  display: inline-flex;
+  min-height: 46px;
+  align-items: center;
+  gap: 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(215, 180, 106, 0.22);
+  background: rgba(9, 8, 7, 0.42);
+  padding: 0 15px;
+  color: #f5efe1;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(18px);
+  transition:
+    border-color 180ms ease,
+    background 180ms ease,
+    color 180ms ease;
+}
+
+.refresh-button:hover {
+  border-color: rgba(215, 180, 106, 0.42);
+  background: rgba(215, 180, 106, 0.14);
+  color: #f5d991;
+}
+
+.refresh-button:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.active-devices-card {
+  overflow: hidden;
+}
+
+.active-devices-card::after {
+  content: '';
+  position: absolute;
+  inset-inline-end: -42px;
+  bottom: -58px;
+  width: 180px;
+  height: 180px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(215, 180, 106, 0.16), transparent 64%);
+  pointer-events: none;
+}
+
+.active-devices-count {
+  text-shadow: 0 0 28px rgba(215, 180, 106, 0.18);
 }
 
 .primary-button {

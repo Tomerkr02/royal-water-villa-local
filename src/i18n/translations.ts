@@ -35,7 +35,8 @@ export const translations = {
       clearTime: 'בטל שעה',
       deviceOn: 'דולק',
       deviceOff: 'כבוי',
-      rotateHint: 'מומלץ לסובב את המכשיר לרוחב לחוויית שליטה נוחה יותר.'
+      rotateHint: 'מומלץ לסובב את המכשיר לרוחב לחוויית שליטה נוחה יותר.',
+      refresh: 'רענון מצב'
     },
     home: {
       title: 'Royal Water Villa',
@@ -144,7 +145,8 @@ export const translations = {
       clearTime: 'Clear time',
       deviceOn: 'On',
       deviceOff: 'Off',
-      rotateHint: 'Please rotate your device for the best control experience.'
+      rotateHint: 'Please rotate your device for the best control experience.',
+      refresh: 'Refresh state'
     },
     home: {
       title: 'Royal Water Villa',
@@ -253,7 +255,8 @@ export const translations = {
       clearTime: 'Retirer',
       deviceOn: 'Allumé',
       deviceOff: 'Éteint',
-      rotateHint: 'Veuillez tourner votre appareil pour une meilleure expérience.'
+      rotateHint: 'Veuillez tourner votre appareil pour une meilleure expérience.',
+      refresh: 'Actualiser'
     },
     home: {
       title: 'Royal Water Villa',

@@ -23,13 +23,21 @@ export const useControlStore = create<ControlStore>((set, get) => ({
 
   async loadDevices() {
     set({ isLoading: true });
-    const result = await controlService.getDevices();
-    set({
-      devices: result.devices,
-      states: result.states,
-      providerName: controlService.getProviderName(),
-      isLoading: false
-    });
+    try {
+      const result = await controlService.getDevices();
+      set({
+        devices: result.devices,
+        states: result.states,
+        providerName: controlService.getProviderName(),
+        isLoading: false
+      });
+    } catch (error) {
+      console.error('[ControlStore] loadDevices failed', { error });
+      set({
+        providerName: controlService.getProviderName(),
+        isLoading: false
+      });
+    }
   },
 
   async setDeviceState(deviceId, isOn) {
