@@ -280,6 +280,85 @@ span {
   text-shadow: 0 0 28px rgba(215, 180, 106, 0.18);
 }
 
+.connection-pill {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(9, 8, 7, 0.46);
+  padding: 0 14px;
+  font-weight: 700;
+  backdrop-filter: blur(16px);
+}
+
+.connection-connected {
+  border-color: rgba(135, 148, 111, 0.34);
+  color: #eff8d7;
+}
+
+.connection-syncing {
+  border-color: rgba(215, 180, 106, 0.34);
+  color: #f5d991;
+}
+
+.connection-error {
+  border-color: rgba(255, 122, 122, 0.32);
+  background: rgba(100, 20, 20, 0.28);
+  color: #ffdada;
+}
+
+.error-toast {
+  position: fixed;
+  top: 18px;
+  inset-inline: 18px;
+  z-index: 50;
+  margin-inline: auto;
+  max-width: 520px;
+  border: 1px solid rgba(255, 122, 122, 0.35);
+  border-radius: 18px;
+  background: rgba(62, 13, 13, 0.82);
+  padding: 14px 18px;
+  color: #fff1f1;
+  box-shadow: 0 18px 54px rgba(0, 0, 0, 0.38);
+  backdrop-filter: blur(20px);
+}
+
+.shabbat-summary {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: #f5efe1;
+}
+
+.shabbat-summary span {
+  border: 1px solid rgba(215, 180, 106, 0.18);
+  border-radius: 999px;
+  background: rgba(9, 8, 7, 0.26);
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+.shabbat-summary-compact span {
+  font-size: 12px;
+}
+
+.activity-log-panel {
+  min-height: 0;
+}
+
+.activity-log-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.18);
+  padding: 12px;
+}
+
 .primary-button {
   background: #d7b46a;
   color: #17110a;

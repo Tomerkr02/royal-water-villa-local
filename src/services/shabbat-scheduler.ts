@@ -1,6 +1,12 @@
 import type { DeviceId } from '../types/device';
 import type { ShabbatActionPreview, ShabbatDeviceSchedule } from '../types/shabbat';
 
+export interface NextShabbatAction {
+  deviceId: DeviceId;
+  action: 'turnOn' | 'turnOff';
+  at: Date;
+}
+
 export function buildShabbatActionPreview(
   schedules: Record<DeviceId, ShabbatDeviceSchedule>
 ): ShabbatActionPreview[] {
@@ -73,4 +79,75 @@ export function describeSchedule(schedule: ShabbatDeviceSchedule): string {
     parts.push(`כיבוי במוצ"ש ${schedule.motzeiOffTime}`);
   }
   return parts.join(' · ');
+}
+
+function dateForWeekday(base: Date, weekday: number, time: string) {
+  const [hourText, minuteText] = time.split(':');
+  const date = new Date(base);
+  const daysAhead = (weekday - base.getDay() + 7) % 7;
+  date.setDate(base.getDate() + daysAhead);
+  date.setHours(Number(hourText), Number(minuteText), 0, 0);
+
+  if (date.getTime() <= base.getTime()) {
+    date.setDate(date.getDate() + 7);
+  }
+
+  return date;
+}
+
+export function getNextShabbatAction(
+  schedules: Record<DeviceId, ShabbatDeviceSchedule>,
+  candleLightingTime: string,
+  now = new Date()
+): NextShabbatAction | null {
+  const actions = Object.values(schedules).flatMap((schedule) => {
+    if (!schedule.enabled) {
+      return [];
+    }
+
+    const nextActions: NextShabbatAction[] = [];
+    if (schedule.beforeShabbatOn) {
+      nextActions.push({
+        deviceId: schedule.deviceId,
+        action: 'turnOn',
+        at: dateForWeekday(now, 5, candleLightingTime)
+      });
+    }
+    if (schedule.nightOffTime) {
+      const nightOffWeekday =
+        Number(schedule.nightOffTime.split(':')[0]) * 60 + Number(schedule.nightOffTime.split(':')[1]) >=
+        Number(candleLightingTime.split(':')[0]) * 60 + Number(candleLightingTime.split(':')[1])
+          ? 5
+          : 6;
+      nextActions.push({
+        deviceId: schedule.deviceId,
+        action: 'turnOff',
+        at: dateForWeekday(now, nightOffWeekday, schedule.nightOffTime)
+      });
+    }
+    if (schedule.morningOnTime) {
+      nextActions.push({
+        deviceId: schedule.deviceId,
+        action: 'turnOn',
+        at: dateForWeekday(now, 6, schedule.morningOnTime)
+      });
+    }
+    if (schedule.morningOffTime) {
+      nextActions.push({
+        deviceId: schedule.deviceId,
+        action: 'turnOff',
+        at: dateForWeekday(now, 6, schedule.morningOffTime)
+      });
+    }
+    if (schedule.motzeiOffTime) {
+      nextActions.push({
+        deviceId: schedule.deviceId,
+        action: 'turnOff',
+        at: dateForWeekday(now, 6, schedule.motzeiOffTime)
+      });
+    }
+    return nextActions;
+  });
+
+  return actions.sort((first, second) => first.at.getTime() - second.at.getTime())[0] ?? null;
 }

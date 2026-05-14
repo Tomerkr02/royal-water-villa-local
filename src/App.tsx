@@ -28,7 +28,10 @@ import outdoorLoungeImage from './assets/images/royal-water-villa-outdoor-lounge
 import poolFruitTrayImage from './assets/images/royal-water-villa-pool-fruit-tray-20.png';
 import { languageLabels, type Language, type Translation } from './i18n/translations';
 import { useI18n, useLanguageStore } from './i18n/language-store';
+import { getNextShabbatAction, type NextShabbatAction } from './services/shabbat-scheduler';
 import { startShabbatRunner, stopShabbatRunner } from './services/shabbat-runner';
+import { releaseScreenWakeLock, requestScreenWakeLock } from './services/wake-lock';
+import { useActivityLogStore } from './store/activity-log-store';
 import { useControlStore } from './store/control-store';
 import { useShabbatStore } from './store/shabbat-store';
 import type { Device, DeviceArea, DeviceId } from './types/device';
@@ -212,19 +215,103 @@ function DeviceTile({ device }: { device: Device }) {
 function StatusRibbon() {
   const { t } = useI18n();
   const isOffline = useControlStore((state) => state.isOffline);
+  const isSyncing = useControlStore((state) => state.isSyncing);
+  const controlError = useControlStore((state) => state.controlError);
+
+  const label = isOffline
+    ? t.common.offlineStatus
+    : controlError
+      ? t.common.controlErrorStatus
+      : isSyncing
+        ? t.common.syncingStatus
+        : t.common.connectedStatus;
+  const statusClass = isOffline || controlError ? 'connection-error' : isSyncing ? 'connection-syncing' : 'connection-connected';
 
   return (
     <div className="flex flex-wrap items-center gap-3 text-sm text-villa-mist">
-      {isOffline ? (
-        <span className="flex items-center gap-2 rounded-full border border-red-300/20 bg-red-500/10 px-4 py-2 text-red-100">
-          <WifiOff size={16} />
-          {t.common.offline}
-        </span>
-      ) : (
-        <span className="rounded-full border border-white/10 bg-white/10 px-4 py-2">
-          {t.common.connected}
-        </span>
-      )}
+      <span className={`connection-pill ${statusClass}`}>
+        {isOffline ? <WifiOff size={16} /> : null}
+        {label}
+      </span>
+    </div>
+  );
+}
+
+function ErrorToast() {
+  const { t } = useI18n();
+  const controlError = useControlStore((state) => state.controlError);
+  if (!controlError || controlError === 'offline') {
+    return null;
+  }
+
+  return <div className="error-toast">{t.common.commandFailed}</div>;
+}
+
+function formatActionTime(date: Date) {
+  return date.toLocaleString(undefined, {
+    weekday: 'short',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+function ShabbatSummaryPanel({ compact = false }: { compact?: boolean }) {
+  const { t } = useI18n();
+  const isEnabled = useShabbatStore((state) => state.isEnabled);
+  const schedules = useShabbatStore((state) => state.schedules);
+  const candleLightingTime = useShabbatStore((state) => state.candleLightingTime);
+  const includedCount = Object.values(schedules).filter((schedule) => schedule.enabled).length;
+  const nextAction = getNextShabbatAction(schedules, candleLightingTime);
+
+  return (
+    <div className={`shabbat-summary ${compact ? 'shabbat-summary-compact' : ''}`}>
+      <span>{isEnabled ? t.home.shabbatActive : t.common.off}</span>
+      <span>
+        {t.common.shabbatIncluded}: {includedCount}
+      </span>
+      <span>{formatNextAction(nextAction, t)}</span>
+    </div>
+  );
+}
+
+function formatNextAction(nextAction: NextShabbatAction | null, t: Translation) {
+  if (!nextAction) {
+    return `${t.common.nextShabbatAction}: ${t.common.noNextShabbatAction}`;
+  }
+
+  return `${t.common.nextShabbatAction}: ${t.devices[nextAction.deviceId]} · ${
+    nextAction.action === 'turnOn' ? t.common.turnOnAction : t.common.turnOffAction
+  } · ${formatActionTime(nextAction.at)}`;
+}
+
+function ActivityLogPanel() {
+  const { t } = useI18n();
+  const entries = useActivityLogStore((state) => state.entries);
+  const visibleEntries = entries.slice(0, 5);
+
+  return (
+    <div className="glass-panel activity-log-panel">
+      <h3 className="text-2xl font-semibold text-villa-pearl">{t.common.activityLog}</h3>
+      <div className="mt-4 space-y-3">
+        {visibleEntries.length ? (
+          visibleEntries.map((entry) => (
+            <div key={entry.id} className="activity-log-row">
+              <div>
+                <p className="font-semibold text-villa-pearl">{t.devices[entry.deviceId]}</p>
+                <p className="text-sm text-villa-mist">
+                  {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ·{' '}
+                  {entry.isOn ? t.common.deviceOn : t.common.deviceOff}
+                </p>
+              </div>
+              <span className={entry.success ? 'status-on rounded-full px-3 py-1 text-xs font-bold' : 'status-off rounded-full px-3 py-1 text-xs font-bold'}>
+                {entry.success ? t.common.success : t.common.failed}
+              </span>
+            </div>
+          ))
+        ) : (
+          <p className="text-villa-mist">{t.common.noActivity}</p>
+        )}
+      </div>
     </div>
   );
 }
@@ -296,6 +383,7 @@ function HomeScreen({ goTo }: { goTo: (screen: Screen) => void }) {
                 {t.home.shabbatActiveNote}
               </p>
             ) : null}
+            <ShabbatSummaryPanel compact />
           </button>
           <div className="glass-panel active-devices-card">
             <div className="flex items-center justify-between gap-4">
@@ -306,6 +394,7 @@ function HomeScreen({ goTo }: { goTo: (screen: Screen) => void }) {
             </div>
             <p className="active-devices-count mt-4 text-6xl font-semibold text-villa-pearl">{activeCount}</p>
           </div>
+          <ActivityLogPanel />
         </section>
       </div>
     </ScreenFrame>
@@ -498,6 +587,7 @@ function ShabbatScreen() {
           <p className="mt-3 text-base leading-7 text-villa-gold">
             {isEnabled ? t.shabbat.runnerActive : t.shabbat.runnerOff} · {t.shabbat.keepTabletOn}
           </p>
+          <ShabbatSummaryPanel compact />
         </div>
         <ToggleSwitch isOn={isEnabled} label={t.shabbat.enableMode} onToggle={() => setEnabled(!isEnabled)} />
       </div>
@@ -572,14 +662,24 @@ export function App() {
   useEffect(() => {
     void loadDevices();
     startShabbatRunner();
+    void requestScreenWakeLock();
     const pollingId = window.setInterval(() => {
       void syncDevices();
     }, 12_000);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        void requestScreenWakeLock();
+        void syncDevices();
+      }
+    };
     const updateOnline = () => setOffline(!navigator.onLine);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('online', updateOnline);
     window.addEventListener('offline', updateOnline);
     return () => {
       window.clearInterval(pollingId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      void releaseScreenWakeLock();
       stopShabbatRunner();
       window.removeEventListener('online', updateOnline);
       window.removeEventListener('offline', updateOnline);
@@ -596,6 +696,7 @@ export function App() {
 
   return (
     <div className="min-h-screen overflow-hidden bg-villa-ink text-villa-pearl" dir={direction}>
+      <ErrorToast />
       <div className="app-background">
         <AnimatePresence mode="wait">
           <motion.img
