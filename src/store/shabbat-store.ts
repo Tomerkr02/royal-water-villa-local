@@ -28,6 +28,30 @@ function withDisabledScheduleDefaults(state: PersistedShabbatStore): PersistedSh
   };
 }
 
+function withClearedAutomaticActions(state: PersistedShabbatStore): PersistedShabbatStore {
+  return {
+    ...state,
+    schedules: Object.fromEntries(
+      Object.entries(defaultShabbatSchedules).map(([deviceId, defaultSchedule]) => {
+        const persistedSchedule = state.schedules?.[deviceId as DeviceId];
+        return [
+          deviceId,
+          {
+            ...defaultSchedule,
+            ...(persistedSchedule ?? {}),
+            enabled: false,
+            beforeShabbatOn: false,
+            nightOffTime: null,
+            morningOnTime: null,
+            morningOffTime: null,
+            motzeiOffTime: null
+          }
+        ];
+      })
+    ) as Record<DeviceId, ShabbatDeviceSchedule>
+  };
+}
+
 export const useShabbatStore = create<ShabbatStore>()(
   persist(
     (set) => ({
@@ -47,8 +71,11 @@ export const useShabbatStore = create<ShabbatStore>()(
     }),
     {
       name: 'royal-water-villa:shabbat-mode',
-      version: 2,
-      migrate: (persistedState) => withDisabledScheduleDefaults(persistedState as PersistedShabbatStore)
+      version: 3,
+      migrate: (persistedState, version) => {
+        const state = persistedState as PersistedShabbatStore;
+        return version < 3 ? withClearedAutomaticActions(state) : withDisabledScheduleDefaults(state);
+      }
     }
   )
 );
