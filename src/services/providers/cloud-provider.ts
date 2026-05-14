@@ -5,7 +5,7 @@ import type { ControlProvider } from '../../types/provider';
 
 const STORAGE_KEY = 'royal-water-villa:cloud-device-states';
 const CONTROL_ENDPOINT = '/api/tuya/control';
-const DEVICES_ENDPOINT = '/api/tuya/devices';
+const DEVICE_ACCESS_ENDPOINT = '/api/tuya/device-access';
 
 interface TuyaControlResponse {
   success?: boolean;
@@ -18,11 +18,12 @@ interface TuyaStatusItem {
   value?: unknown;
 }
 
-interface TuyaDevicePayload {
-  id?: string;
+interface TuyaDeviceAccessResponse {
+  success?: boolean;
   deviceId?: string;
-  status?: TuyaStatusItem[] | Record<string, unknown>;
-  online?: boolean;
+  result?: {
+    status?: TuyaStatusItem[];
+  };
 }
 
 function readStates(): DeviceStateMap {
@@ -42,77 +43,65 @@ function writeStates(states: DeviceStateMap) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(states));
 }
 
-function getLocalDeviceIdFromTuyaId(tuyaDeviceId: string, commandCode: string): DeviceId | null {
-  const entry = Object.entries(tuyaDeviceMappings).find(([, mapping]) => {
-    return mapping?.tuyaDeviceId === tuyaDeviceId && mapping.commandCode === commandCode;
-  });
-  return (entry?.[0] as DeviceId | undefined) ?? null;
-}
-
-function mergeTuyaStatuses(states: DeviceStateMap, payload: unknown): DeviceStateMap | null {
-  const possibleDevices = Array.isArray(payload)
-    ? payload
-    : Array.isArray((payload as { devices?: unknown[] })?.devices)
-      ? (payload as { devices: unknown[] }).devices
-      : Array.isArray((payload as { result?: unknown[] })?.result)
-        ? (payload as { result: unknown[] }).result
-        : null;
-
-  if (!possibleDevices) {
-    return null;
-  }
-
-  let foundState = false;
-  const next = { ...states };
-
-  for (const rawDevice of possibleDevices) {
-    const device = rawDevice as TuyaDevicePayload;
-    const tuyaDeviceId = device.id ?? device.deviceId;
-    if (!tuyaDeviceId || !device.status) {
-      continue;
-    }
-
-    const statuses = Array.isArray(device.status)
-      ? device.status
-      : Object.entries(device.status).map(([code, value]) => ({ code, value }));
-
-    for (const status of statuses) {
-      if (typeof status.code !== 'string' || typeof status.value !== 'boolean') {
-        continue;
-      }
-
-      const localDeviceId = getLocalDeviceIdFromTuyaId(tuyaDeviceId, status.code);
-      if (!localDeviceId) {
-        continue;
-      }
-
-      next[localDeviceId] = { ...next[localDeviceId], isOn: status.value };
-      foundState = true;
-    }
-  }
-
-  return foundState ? next : null;
-}
-
 async function fetchKnownDeviceStates(cachedStates: DeviceStateMap): Promise<DeviceStateMap | null> {
+  console.info('[CloudProvider] polling devices');
+  const next = { ...cachedStates };
+  let syncedAnyDevice = false;
+
   try {
-    const response = await fetch(DEVICES_ENDPOINT, { method: 'GET' });
-    if (!response.ok) {
-      console.info('[CloudProvider] getDevices state endpoint unavailable', { status: response.status });
-      return null;
+    const mappingsByTuyaDevice = Object.entries(tuyaDeviceMappings).reduce(
+      (groups, [localDeviceId, mapping]) => {
+        if (!mapping) {
+          return groups;
+        }
+        groups[mapping.tuyaDeviceId] = [
+          ...(groups[mapping.tuyaDeviceId] ?? []),
+          { localDeviceId: localDeviceId as DeviceId, commandCode: mapping.commandCode }
+        ];
+        return groups;
+      },
+      {} as Record<string, Array<{ localDeviceId: DeviceId; commandCode: string }>>
+    );
+
+    await Promise.all(
+      Object.entries(mappingsByTuyaDevice).map(async ([tuyaDeviceId, localMappings]) => {
+        const response = await fetch(`${DEVICE_ACCESS_ENDPOINT}?deviceId=${encodeURIComponent(tuyaDeviceId)}`, {
+          method: 'GET'
+        });
+
+        if (!response.ok) {
+          throw new Error(`Device access failed for ${tuyaDeviceId}: ${response.status}`);
+        }
+
+        const payload = (await response.json()) as TuyaDeviceAccessResponse;
+        const statuses = payload.result?.status ?? [];
+
+        for (const mapping of localMappings) {
+          const status = statuses.find((item) => item.code === mapping.commandCode);
+          if (typeof status?.value !== 'boolean') {
+            continue;
+          }
+
+          next[mapping.localDeviceId] = { ...next[mapping.localDeviceId], isOn: status.value };
+          syncedAnyDevice = true;
+          console.info('[CloudProvider] device synced', {
+            deviceId: mapping.localDeviceId,
+            tuyaDeviceId,
+            commandCode: mapping.commandCode,
+            isOn: status.value
+          });
+        }
+      })
+    );
+
+    if (syncedAnyDevice) {
+      writeStates(next);
+      return next;
     }
 
-    const payload = (await response.json()) as unknown;
-    const mergedStates = mergeTuyaStatuses(cachedStates, payload);
-    if (!mergedStates) {
-      console.info('[CloudProvider] getDevices state response did not include readable switch states', { payload });
-      return null;
-    }
-
-    writeStates(mergedStates);
-    return mergedStates;
+    return null;
   } catch (error) {
-    console.info('[CloudProvider] getDevices using cached state; state endpoint unavailable', { error });
+    console.error('[CloudProvider] polling failed', { error });
     return null;
   }
 }

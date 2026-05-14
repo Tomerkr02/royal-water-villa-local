@@ -6,9 +6,11 @@ interface ControlStore {
   devices: Device[];
   states: DeviceStateMap | null;
   isLoading: boolean;
+  isSyncing: boolean;
   isOffline: boolean;
   providerName: string;
   loadDevices: () => Promise<void>;
+  syncDevices: () => Promise<void>;
   setDeviceState: (deviceId: DeviceId, isOn: boolean) => Promise<void>;
   turnOffAll: () => Promise<void>;
   setOffline: (isOffline: boolean) => void;
@@ -18,6 +20,7 @@ export const useControlStore = create<ControlStore>((set, get) => ({
   devices: [],
   states: null,
   isLoading: true,
+  isSyncing: false,
   isOffline: typeof navigator !== 'undefined' ? !navigator.onLine : false,
   providerName: controlService.getProviderName(),
 
@@ -40,7 +43,37 @@ export const useControlStore = create<ControlStore>((set, get) => ({
     }
   },
 
+  async syncDevices() {
+    if (get().isSyncing) {
+      return;
+    }
+
+    set({ isSyncing: true });
+    try {
+      const result = await controlService.getDevices();
+      set({
+        devices: result.devices,
+        states: result.states,
+        providerName: controlService.getProviderName(),
+        isSyncing: false
+      });
+    } catch (error) {
+      console.error('[ControlStore] syncDevices failed', { error });
+      set({ isSyncing: false });
+    }
+  },
+
   async setDeviceState(deviceId, isOn) {
+    const previousStates = get().states;
+    if (previousStates) {
+      set({
+        states: {
+          ...previousStates,
+          [deviceId]: { ...previousStates[deviceId], isOn }
+        }
+      });
+    }
+
     try {
       const updated = await controlService.setDeviceState(deviceId, isOn);
       const states = get().states;
@@ -49,6 +82,9 @@ export const useControlStore = create<ControlStore>((set, get) => ({
       }
     } catch (error) {
       console.error('[ControlStore] device command failed', { deviceId, isOn, error });
+      if (previousStates) {
+        set({ states: previousStates });
+      }
     }
   },
 

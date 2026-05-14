@@ -315,8 +315,8 @@ function HomeScreen({ goTo }: { goTo: (screen: Screen) => void }) {
 function LightingScreen() {
   const { t } = useI18n();
   const devices = useControlStore((state) => state.devices);
-  const loadDevices = useControlStore((state) => state.loadDevices);
-  const isLoading = useControlStore((state) => state.isLoading);
+  const syncDevices = useControlStore((state) => state.syncDevices);
+  const isSyncing = useControlStore((state) => state.isSyncing);
   const grouped = useMemo(() => groupByArea(devices), [devices]);
 
   return (
@@ -325,12 +325,12 @@ function LightingScreen() {
         <button
           type="button"
           className="refresh-button"
-          onClick={() => void loadDevices()}
-          disabled={isLoading}
+          onClick={() => void syncDevices()}
+          disabled={isSyncing}
           aria-label={t.common.refresh}
           title={t.common.refresh}
         >
-          <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
+          <RefreshCw size={18} className={isSyncing ? 'animate-spin' : ''} />
           <span>{t.common.refresh}</span>
         </button>
       </div>
@@ -565,21 +565,26 @@ export function App() {
   const { direction, t } = useI18n();
   const [screen, setScreen] = useState<Screen>('home');
   const loadDevices = useControlStore((state) => state.loadDevices);
+  const syncDevices = useControlStore((state) => state.syncDevices);
   const setOffline = useControlStore((state) => state.setOffline);
   const isLoading = useControlStore((state) => state.isLoading);
 
   useEffect(() => {
     void loadDevices();
     startShabbatRunner();
+    const pollingId = window.setInterval(() => {
+      void syncDevices();
+    }, 12_000);
     const updateOnline = () => setOffline(!navigator.onLine);
     window.addEventListener('online', updateOnline);
     window.addEventListener('offline', updateOnline);
     return () => {
+      window.clearInterval(pollingId);
       stopShabbatRunner();
       window.removeEventListener('online', updateOnline);
       window.removeEventListener('offline', updateOnline);
     };
-  }, [loadDevices, setOffline]);
+  }, [loadDevices, setOffline, syncDevices]);
 
   const content = {
     home: <HomeScreen goTo={setScreen} />,
