@@ -4,10 +4,28 @@ import { defaultShabbatSchedules } from '../data/shabbat-presets';
 import type { DeviceId } from '../types/device';
 import type { ShabbatDeviceSchedule, ShabbatState } from '../types/shabbat';
 
+type PersistedShabbatStore = Partial<ShabbatState>;
+
 interface ShabbatStore extends ShabbatState {
   setEnabled: (isEnabled: boolean) => void;
   updateSchedule: (deviceId: DeviceId, patch: Partial<ShabbatDeviceSchedule>) => void;
   resetSchedules: () => void;
+}
+
+function withDisabledScheduleDefaults(state: PersistedShabbatStore): PersistedShabbatStore {
+  return {
+    ...state,
+    schedules: Object.fromEntries(
+      Object.entries(defaultShabbatSchedules).map(([deviceId, defaultSchedule]) => [
+        deviceId,
+        {
+          ...defaultSchedule,
+          ...(state.schedules?.[deviceId as DeviceId] ?? {}),
+          enabled: false
+        }
+      ])
+    ) as Record<DeviceId, ShabbatDeviceSchedule>
+  };
 }
 
 export const useShabbatStore = create<ShabbatStore>()(
@@ -28,7 +46,9 @@ export const useShabbatStore = create<ShabbatStore>()(
       resetSchedules: () => set({ schedules: defaultShabbatSchedules })
     }),
     {
-      name: 'royal-water-villa:shabbat-mode'
+      name: 'royal-water-villa:shabbat-mode',
+      version: 2,
+      migrate: (persistedState) => withDisabledScheduleDefaults(persistedState as PersistedShabbatStore)
     }
   )
 );

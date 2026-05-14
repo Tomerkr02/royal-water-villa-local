@@ -19,16 +19,16 @@ const midnightOff: DeviceId[] = [
 ];
 
 export const defaultShabbatSchedules = devices.reduce((schedules, device) => {
-  const enabled = allShabbat.includes(device.id) || midnightOff.includes(device.id);
+  const hasSuggestedPreset = allShabbat.includes(device.id) || midnightOff.includes(device.id);
   schedules[device.id] = {
     deviceId: device.id,
     area: device.area,
-    enabled,
-    beforeShabbatOn: enabled,
+    enabled: false,
+    beforeShabbatOn: hasSuggestedPreset,
     nightOffTime: midnightOff.includes(device.id) ? '00:00' : null,
     morningOnTime: null,
     morningOffTime: null,
-    motzeiOffTime: enabled ? '20:30' : null
+    motzeiOffTime: hasSuggestedPreset ? '20:30' : null
   };
   return schedules;
 }, {} as Record<DeviceId, ShabbatDeviceSchedule>);
