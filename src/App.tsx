@@ -21,8 +21,8 @@ import {
   Waves,
   WifiOff
 } from 'lucide-react';
-import { areaLabels, deviceById } from './data/devices';
-import { describeSchedule } from './services/shabbat-scheduler';
+import { languageLabels, type Language, type Translation } from './i18n/translations';
+import { useI18n, useLanguageStore } from './i18n/language-store';
 import { startShabbatRunner, stopShabbatRunner } from './services/shabbat-runner';
 import { useControlStore } from './store/control-store';
 import { useShabbatStore } from './store/shabbat-store';
@@ -31,12 +31,12 @@ import type { ShabbatDeviceSchedule } from './types/shabbat';
 
 type Screen = 'home' | 'lighting' | 'scenes' | 'shabbat' | 'guest';
 
-const navItems: Array<{ id: Screen; label: string; icon: typeof Home }> = [
-  { id: 'home', label: 'בית', icon: Home },
-  { id: 'lighting', label: 'תאורה', icon: Lamp },
-  { id: 'scenes', label: 'תרחישים', icon: Sparkles },
-  { id: 'shabbat', label: 'מצב שבת', icon: CalendarClock },
-  { id: 'guest', label: 'מידע לאורחים', icon: Info }
+const navItems: Array<{ id: Screen; icon: typeof Home }> = [
+  { id: 'home', icon: Home },
+  { id: 'lighting', icon: Lamp },
+  { id: 'scenes', icon: Sparkles },
+  { id: 'shabbat', icon: CalendarClock },
+  { id: 'guest', icon: Info }
 ];
 
 const areaIcons: Record<DeviceArea, typeof Home> = {
@@ -58,6 +58,29 @@ function groupByArea(devices: Device[]) {
     groups[device.area] = [...(groups[device.area] ?? []), device];
     return groups;
   }, {} as Partial<Record<DeviceArea, Device[]>>);
+}
+
+function areaOrder() {
+  return ['living', 'outdoor', 'pool', 'bathroom', 'bedroom'] as DeviceArea[];
+}
+
+function describeLocalizedSchedule(schedule: ShabbatDeviceSchedule, t: Translation) {
+  if (!schedule.enabled) {
+    return t.shabbat.summaryInactive;
+  }
+
+  const parts: string[] = [schedule.beforeShabbatOn ? t.shabbat.summaryBeforeOn : t.shabbat.summaryBeforeOff];
+  parts.push(schedule.nightOffTime ? `${t.shabbat.summaryNightOff}${schedule.nightOffTime}` : t.shabbat.summaryNoNightOff);
+  if (schedule.morningOnTime) {
+    parts.push(`${t.shabbat.summaryMorningOn}${schedule.morningOnTime}`);
+  }
+  if (schedule.morningOffTime) {
+    parts.push(`${t.shabbat.summaryMorningOff}${schedule.morningOffTime}`);
+  }
+  if (schedule.motzeiOffTime) {
+    parts.push(`${t.shabbat.summaryMotzeiOff}${schedule.motzeiOffTime}`);
+  }
+  return parts.join(' · ');
 }
 
 function ToggleSwitch({ isOn, onToggle, label }: { isOn: boolean; onToggle: () => void; label: string }) {
@@ -91,6 +114,7 @@ function TimeStepper({
   onChange: (value: string | null) => void;
   nullable?: boolean;
 }) {
+  const { t } = useI18n();
   const current = value ?? '00:00';
   const [hourText, minuteText] = current.split(':');
   const hour = Number(hourText);
@@ -110,7 +134,7 @@ function TimeStepper({
           onClick={() => onChange(value ? null : '00:00')}
           className="touch-button rounded-xl border border-white/10 bg-white/10 px-4 text-sm text-villa-pearl"
         >
-          {value ? 'בטל שעה' : 'הוסף שעה'}
+          {value ? t.common.clearTime : t.common.addTime}
         </button>
       ) : null}
       <div className={`flex items-center gap-2 ${nullable && !value ? 'opacity-40' : ''}`}>
@@ -135,6 +159,7 @@ function TimeStepper({
 }
 
 function DeviceTile({ device }: { device: Device }) {
+  const { t } = useI18n();
   const states = useControlStore((state) => state.states);
   const setDeviceState = useControlStore((state) => state.setDeviceState);
   const isOn = states?.[device.id]?.isOn ?? false;
@@ -148,13 +173,13 @@ function DeviceTile({ device }: { device: Device }) {
             <Icon size={28} />
           </div>
           <div>
-            <h3 className="text-2xl font-semibold text-villa-pearl">{device.name}</h3>
-            <p className="mt-1 text-base text-villa-mist">{areaLabels[device.area]}</p>
+            <h3 className="text-2xl font-semibold text-villa-pearl">{t.devices[device.id]}</h3>
+            <p className="mt-1 text-base text-villa-mist">{t.areas[device.area]}</p>
           </div>
         </div>
         <ToggleSwitch
           isOn={isOn}
-          label={`${isOn ? 'כבה' : 'הדלק'} ${device.name}`}
+          label={`${isOn ? t.lighting.turnOff : t.lighting.turnOn} ${t.devices[device.id]}`}
           onToggle={() => void setDeviceState(device.id, !isOn)}
         />
       </div>
@@ -163,6 +188,7 @@ function DeviceTile({ device }: { device: Device }) {
 }
 
 function StatusRibbon() {
+  const { t } = useI18n();
   const isOffline = useControlStore((state) => state.isOffline);
 
   return (
@@ -170,18 +196,40 @@ function StatusRibbon() {
       {isOffline ? (
         <span className="flex items-center gap-2 rounded-full border border-red-300/20 bg-red-500/10 px-4 py-2 text-red-100">
           <WifiOff size={16} />
-          האפליקציה זמינה גם לא מקוון. שליטה אמיתית תדרוש רשת מקומית.
+          {t.common.offline}
         </span>
       ) : (
         <span className="rounded-full border border-white/10 bg-white/10 px-4 py-2">
-          מחובר ומוכן לשימוש מקומי
+          {t.common.connected}
         </span>
       )}
     </div>
   );
 }
 
+function LanguageSwitcher() {
+  const language = useLanguageStore((state) => state.language);
+  const setLanguage = useLanguageStore((state) => state.setLanguage);
+  const languages: Language[] = ['he', 'en', 'fr'];
+
+  return (
+    <div className="language-switcher" aria-label="Language">
+      {languages.map((item) => (
+        <button
+          key={item}
+          type="button"
+          onClick={() => setLanguage(item)}
+          className={`language-option ${language === item ? 'language-option-active' : ''}`}
+        >
+          {languageLabels[item]}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function HomeScreen({ goTo }: { goTo: (screen: Screen) => void }) {
+  const { t } = useI18n();
   const devices = useControlStore((state) => state.devices);
   const states = useControlStore((state) => state.states);
   const turnOffAll = useControlStore((state) => state.turnOffAll);
@@ -189,44 +237,44 @@ function HomeScreen({ goTo }: { goTo: (screen: Screen) => void }) {
   const activeCount = devices.filter((device) => states?.[device.id]?.isOn).length;
 
   return (
-    <ScreenFrame title="Royal Water Villa" subtitle="שליטה מקומית, רגועה ומוכנה לאורחי הווילה">
+    <ScreenFrame title={t.home.title} subtitle={t.home.subtitle}>
       <div className="grid gap-5 xl:grid-cols-[1.35fr_0.65fr]">
         <section className="hero-panel">
           <div className="max-w-3xl">
-            <p className="mb-4 text-xl text-villa-gold">טאבלט שליטה פרטי</p>
+            <p className="mb-4 text-xl text-villa-gold">{t.home.eyebrow}</p>
             <h2 className="text-6xl font-semibold leading-tight text-villa-pearl">
-              ערב שקט, תאורה מדויקת, הכל במקום אחד.
+              {t.home.headline}
             </h2>
           </div>
           <div className="mt-10 flex flex-wrap gap-4">
             <button className="primary-button" type="button" onClick={() => goTo('lighting')}>
               <Lamp size={24} />
-              שליטה בתאורה
+              {t.home.lightingButton}
             </button>
             <button className="secondary-button" type="button" onClick={() => void turnOffAll()}>
               <Power size={24} />
-              כבה הכל
+              {t.home.turnOffAll}
             </button>
           </div>
         </section>
         <section className="grid gap-5">
-          <button type="button" className="glass-panel text-right" onClick={() => goTo('shabbat')}>
+          <button type="button" className="glass-panel text-start" onClick={() => goTo('shabbat')}>
             <div className="mb-8 flex items-center justify-between">
               <CalendarClock className="text-villa-gold" size={36} />
-              {isShabbatEnabled ? <span className="active-pill">פעיל</span> : <span className="quiet-pill">כבוי</span>}
+              {isShabbatEnabled ? <span className="active-pill">{t.common.active}</span> : <span className="quiet-pill">{t.common.off}</span>}
             </div>
-            <h3 className="text-3xl font-semibold text-villa-pearl">מצב שבת</h3>
+            <h3 className="text-3xl font-semibold text-villa-pearl">{t.home.shabbatTitle}</h3>
             <p className="mt-3 text-lg leading-8 text-villa-mist">
-              {isShabbatEnabled ? 'מצב שבת פעיל' : 'הגדרה פשוטה לכל חדר, עם סיכום ברור לפני הפעלה.'}
+              {isShabbatEnabled ? t.home.shabbatActive : t.home.shabbatDescription}
             </p>
             {isShabbatEnabled ? (
               <p className="mt-3 text-base leading-7 text-villa-gold">
-                הטאבלט יבצע את הפעולות בזמן שהאפליקציה פתוחה.
+                {t.home.shabbatActiveNote}
               </p>
             ) : null}
           </button>
           <div className="glass-panel">
-            <p className="text-lg text-villa-mist">מכשירים דולקים עכשיו</p>
+            <p className="text-lg text-villa-mist">{t.home.activeDevices}</p>
             <p className="mt-4 text-6xl font-semibold text-villa-pearl">{activeCount}</p>
           </div>
         </section>
@@ -236,16 +284,17 @@ function HomeScreen({ goTo }: { goTo: (screen: Screen) => void }) {
 }
 
 function LightingScreen() {
+  const { t } = useI18n();
   const devices = useControlStore((state) => state.devices);
   const grouped = useMemo(() => groupByArea(devices), [devices]);
 
   return (
-    <ScreenFrame title="תאורה ומכשירים" subtitle="כפתורים גדולים לשליטה מיידית">
+    <ScreenFrame title={t.lighting.title} subtitle={t.lighting.subtitle}>
       <div className="space-y-8">
-        {(Object.keys(areaLabels) as DeviceArea[]).map((area) =>
+        {areaOrder().map((area) =>
           grouped[area]?.length ? (
             <section key={area}>
-              <h2 className="mb-4 text-2xl font-semibold text-villa-gold">{areaLabels[area]}</h2>
+              <h2 className="mb-4 text-2xl font-semibold text-villa-gold">{t.areas[area]}</h2>
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {grouped[area]?.map((device) => <DeviceTile key={device.id} device={device} />)}
               </div>
@@ -258,38 +307,39 @@ function LightingScreen() {
 }
 
 function ScenesScreen() {
+  const { t } = useI18n();
   const setDeviceState = useControlStore((state) => state.setDeviceState);
   const turnOffAll = useControlStore((state) => state.turnOffAll);
 
   const scenes = [
     {
-      label: 'ערב בבריכה',
+      label: t.scenes.poolEvening,
       icon: Waves,
       action: () => Promise.all(['poolLight', 'pergolaLight', 'barLight'].map((id) => setDeviceState(id as DeviceId, true)))
     },
     {
-      label: 'אירוח רגוע',
+      label: t.scenes.calmHosting,
       icon: Sparkles,
       action: () =>
         Promise.all(['livingRoomLedWall', 'livingRoomCeilingSpots', 'outdoorWallLight'].map((id) => setDeviceState(id as DeviceId, true)))
     },
     {
-      label: 'לילה שקט',
+      label: t.scenes.quietNight,
       icon: Moon,
       action: () => turnOffAll()
     }
   ];
 
   return (
-    <ScreenFrame title="תרחישים" subtitle="פעולות מוכנות מראש לאווירה הנכונה">
+    <ScreenFrame title={t.scenes.title} subtitle={t.scenes.subtitle}>
       <div className="grid gap-5 md:grid-cols-3">
         {scenes.map((scene) => {
           const Icon = scene.icon;
           return (
-            <button key={scene.label} type="button" className="glass-panel min-h-64 text-right" onClick={() => void scene.action()}>
+            <button key={scene.label} type="button" className="glass-panel min-h-64 text-start" onClick={() => void scene.action()}>
               <Icon size={42} className="mb-10 text-villa-gold" />
               <h3 className="text-3xl font-semibold text-villa-pearl">{scene.label}</h3>
-              <p className="mt-4 text-lg leading-8 text-villa-mist">מגע אחד, בלי תפריטים עמוקים.</p>
+              <p className="mt-4 text-lg leading-8 text-villa-mist">{t.scenes.description}</p>
             </button>
           );
         })}
@@ -299,19 +349,19 @@ function ScenesScreen() {
 }
 
 function ShabbatCard({ schedule }: { schedule: ShabbatDeviceSchedule }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const updateSchedule = useShabbatStore((state) => state.updateSchedule);
-  const device = deviceById[schedule.deviceId];
 
   return (
     <motion.div layout className="glass-panel p-0">
-      <button type="button" className="flex w-full items-center justify-between gap-4 p-5 text-right" onClick={() => setOpen((value) => !value)}>
+      <button type="button" className="flex w-full items-center justify-between gap-4 p-5 text-start" onClick={() => setOpen((value) => !value)}>
         <div>
-          <h3 className="text-2xl font-semibold text-villa-pearl">{device.name}</h3>
-          <p className="mt-2 text-base leading-7 text-villa-mist">{describeSchedule(schedule)}</p>
+          <h3 className="text-2xl font-semibold text-villa-pearl">{t.devices[schedule.deviceId]}</h3>
+          <p className="mt-2 text-base leading-7 text-villa-mist">{describeLocalizedSchedule(schedule, t)}</p>
         </div>
         <div className="flex items-center gap-3">
-          {schedule.enabled ? <span className="active-pill">כלול</span> : <span className="quiet-pill">לא פעיל</span>}
+          {schedule.enabled ? <span className="active-pill">{t.common.included}</span> : <span className="quiet-pill">{t.common.inactive}</span>}
           <ChevronDown className={`text-villa-gold transition ${open ? 'rotate-180' : ''}`} />
         </div>
       </button>
@@ -324,42 +374,42 @@ function ShabbatCard({ schedule }: { schedule: ShabbatDeviceSchedule }) {
             className="overflow-hidden"
           >
             <div className="space-y-5 border-t border-white/10 p-5">
-              <SettingRow label="פעיל לשבת">
+              <SettingRow label={t.shabbat.deviceEnabled}>
                 <ToggleSwitch
                   isOn={schedule.enabled}
-                  label={`הפעל ${device.name} לשבת`}
+                  label={`${t.shabbat.enableDevice} ${t.devices[schedule.deviceId]}`}
                   onToggle={() => updateSchedule(schedule.deviceId, { enabled: !schedule.enabled })}
                 />
               </SettingRow>
-              <SettingRow label="הדלק לפני כניסת שבת">
+              <SettingRow label={t.shabbat.beforeShabbat}>
                 <ToggleSwitch
                   isOn={schedule.beforeShabbatOn}
-                  label={`הדלק ${device.name} לפני שבת`}
+                  label={`${t.shabbat.beforeShabbat} ${t.devices[schedule.deviceId]}`}
                   onToggle={() => updateSchedule(schedule.deviceId, { beforeShabbatOn: !schedule.beforeShabbatOn })}
                 />
               </SettingRow>
-              <SettingRow label="כיבוי בלילה">
+              <SettingRow label={t.shabbat.nightOff}>
                 <TimeStepper
                   nullable
                   value={schedule.nightOffTime}
                   onChange={(nightOffTime) => updateSchedule(schedule.deviceId, { nightOffTime })}
                 />
               </SettingRow>
-              <SettingRow label="הדלקת בוקר">
+              <SettingRow label={t.shabbat.morningOn}>
                 <TimeStepper
                   nullable
                   value={schedule.morningOnTime}
                   onChange={(morningOnTime) => updateSchedule(schedule.deviceId, { morningOnTime })}
                 />
               </SettingRow>
-              <SettingRow label="כיבוי בוקר">
+              <SettingRow label={t.shabbat.morningOff}>
                 <TimeStepper
                   nullable
                   value={schedule.morningOffTime}
                   onChange={(morningOffTime) => updateSchedule(schedule.deviceId, { morningOffTime })}
                 />
               </SettingRow>
-              <SettingRow label="כיבוי מוצאי שבת">
+              <SettingRow label={t.shabbat.motzeiOff}>
                 <TimeStepper
                   nullable
                   value={schedule.motzeiOffTime}
@@ -384,6 +434,7 @@ function SettingRow({ label, children }: { label: string; children: React.ReactN
 }
 
 function ShabbatScreen() {
+  const { t } = useI18n();
   const isEnabled = useShabbatStore((state) => state.isEnabled);
   const setEnabled = useShabbatStore((state) => state.setEnabled);
   const schedules = useShabbatStore((state) => state.schedules);
@@ -395,22 +446,22 @@ function ShabbatScreen() {
   }, [schedules]);
 
   return (
-    <ScreenFrame title="מצב שבת" subtitle="הגדרה ברורה לאורחים עם סיכום פשוט לכל אזור">
+    <ScreenFrame title={t.shabbat.title} subtitle={t.shabbat.subtitle}>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-villa-gold/25 bg-villa-gold/10 p-5">
         <div>
-          <p className="text-2xl font-semibold text-villa-pearl">הפעלת מצב שבת באפליקציה</p>
-          <p className="mt-2 text-villa-mist">ההגדרות נשמרות מקומית בטאבלט.</p>
+          <p className="text-2xl font-semibold text-villa-pearl">{t.shabbat.appToggleTitle}</p>
+          <p className="mt-2 text-villa-mist">{t.shabbat.storedLocally}</p>
           <p className="mt-3 text-base leading-7 text-villa-gold">
-            {isEnabled ? 'שעון שבת פעיל במכשיר זה' : 'שעון שבת כבוי'} · הטאבלט חייב להישאר דולק ומחובר ל-WiFi.
+            {isEnabled ? t.shabbat.runnerActive : t.shabbat.runnerOff} · {t.shabbat.keepTabletOn}
           </p>
         </div>
-        <ToggleSwitch isOn={isEnabled} label="הפעל מצב שבת" onToggle={() => setEnabled(!isEnabled)} />
+        <ToggleSwitch isOn={isEnabled} label={t.shabbat.enableMode} onToggle={() => setEnabled(!isEnabled)} />
       </div>
       <div className="space-y-7">
-        {(Object.keys(areaLabels) as DeviceArea[]).map((area) =>
+        {areaOrder().map((area) =>
           grouped[area]?.length ? (
             <section key={area}>
-              <h2 className="mb-4 text-2xl font-semibold text-villa-gold">{areaLabels[area]}</h2>
+              <h2 className="mb-4 text-2xl font-semibold text-villa-gold">{t.areas[area]}</h2>
               <div className="grid gap-4 xl:grid-cols-2">
                 {grouped[area]?.map((schedule) => (
                   <ShabbatCard key={schedule.deviceId} schedule={schedule} />
@@ -425,15 +476,16 @@ function ShabbatScreen() {
 }
 
 function GuestInfoScreen() {
+  const { t } = useI18n();
   const items = [
-    ['WiFi', 'שם הרשת והסיסמה יתווספו בטאבלט המקומי.'],
-    ['בריכה', 'יש להשאיר ילדים בהשגחת מבוגר בלבד.'],
-    ['יציאה', 'כיבוי כללי זמין במסך הבית לפני עזיבה.'],
-    ['תמיכה', 'לכל תקלה, פנו לצוות האירוח במספר שיוגדר במקום.']
+    [t.guest.wifiTitle, t.guest.wifiText],
+    [t.guest.poolTitle, t.guest.poolText],
+    [t.guest.checkoutTitle, t.guest.checkoutText],
+    [t.guest.supportTitle, t.guest.supportText]
   ];
 
   return (
-    <ScreenFrame title="מידע לאורחים" subtitle="פרטים חשובים לשהייה רגועה">
+    <ScreenFrame title={t.guest.title} subtitle={t.guest.subtitle}>
       <div className="grid gap-5 md:grid-cols-2">
         {items.map(([title, text]) => (
           <div key={title} className="glass-panel">
@@ -455,7 +507,10 @@ function ScreenFrame({ title, subtitle, children }: { title: string; subtitle: s
           <h1 className="text-5xl font-semibold leading-tight text-villa-pearl">{title}</h1>
           <p className="mt-3 text-xl text-villa-mist">{subtitle}</p>
         </div>
-        <StatusRibbon />
+        <div className="flex flex-wrap items-center justify-end gap-3">
+          <LanguageSwitcher />
+          <StatusRibbon />
+        </div>
       </div>
       {children}
     </motion.main>
@@ -463,6 +518,7 @@ function ScreenFrame({ title, subtitle, children }: { title: string; subtitle: s
 }
 
 export function App() {
+  const { direction, t } = useI18n();
   const [screen, setScreen] = useState<Screen>('home');
   const loadDevices = useControlStore((state) => state.loadDevices);
   const setOffline = useControlStore((state) => state.setOffline);
@@ -490,7 +546,7 @@ export function App() {
   }[screen];
 
   return (
-    <div className="min-h-screen overflow-hidden bg-villa-ink text-villa-pearl" dir="rtl">
+    <div className="min-h-screen overflow-hidden bg-villa-ink text-villa-pearl" dir={direction}>
       <div className="app-background" />
       <div className="relative z-10 grid min-h-screen grid-cols-[112px_1fr]">
         <nav className="border-l border-white/10 bg-black/20 px-3 py-6 backdrop-blur-2xl">
@@ -501,14 +557,15 @@ export function App() {
             {navItems.map((item) => {
               const Icon = item.icon;
               const active = item.id === screen;
+              const label = t.nav[item.id];
               return (
                 <button
                   key={item.id}
                   type="button"
                   onClick={() => setScreen(item.id)}
                   className={`nav-button ${active ? 'nav-button-active' : ''}`}
-                  aria-label={item.label}
-                  title={item.label}
+                  aria-label={label}
+                  title={label}
                 >
                   <Icon size={28} />
                   {active ? <Check size={14} className="absolute left-2 top-2" /> : null}
@@ -519,7 +576,7 @@ export function App() {
         </nav>
         <section className="h-screen overflow-y-auto px-7 py-6 lg:px-10">
           {isLoading ? (
-            <div className="flex h-full items-center justify-center text-2xl text-villa-mist">טוען את הווילה...</div>
+            <div className="flex h-full items-center justify-center text-2xl text-villa-mist">{t.common.loading}</div>
           ) : (
             <AnimatePresence mode="wait">{content}</AnimatePresence>
           )}
