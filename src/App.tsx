@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { areaLabels, deviceById } from './data/devices';
 import { describeSchedule } from './services/shabbat-scheduler';
+import { startShabbatRunner, stopShabbatRunner } from './services/shabbat-runner';
 import { useControlStore } from './store/control-store';
 import { useShabbatStore } from './store/shabbat-store';
 import type { Device, DeviceArea, DeviceId } from './types/device';
@@ -216,8 +217,13 @@ function HomeScreen({ goTo }: { goTo: (screen: Screen) => void }) {
             </div>
             <h3 className="text-3xl font-semibold text-villa-pearl">מצב שבת</h3>
             <p className="mt-3 text-lg leading-8 text-villa-mist">
-              הגדרה פשוטה לכל חדר, עם סיכום ברור לפני הפעלה.
+              {isShabbatEnabled ? 'מצב שבת פעיל' : 'הגדרה פשוטה לכל חדר, עם סיכום ברור לפני הפעלה.'}
             </p>
+            {isShabbatEnabled ? (
+              <p className="mt-3 text-base leading-7 text-villa-gold">
+                הטאבלט יבצע את הפעולות בזמן שהאפליקציה פתוחה.
+              </p>
+            ) : null}
           </button>
           <div className="glass-panel">
             <p className="text-lg text-villa-mist">מכשירים דולקים עכשיו</p>
@@ -394,6 +400,9 @@ function ShabbatScreen() {
         <div>
           <p className="text-2xl font-semibold text-villa-pearl">הפעלת מצב שבת באפליקציה</p>
           <p className="mt-2 text-villa-mist">ההגדרות נשמרות מקומית בטאבלט.</p>
+          <p className="mt-3 text-base leading-7 text-villa-gold">
+            {isEnabled ? 'שעון שבת פעיל במכשיר זה' : 'שעון שבת כבוי'} · הטאבלט חייב להישאר דולק ומחובר ל-WiFi.
+          </p>
         </div>
         <ToggleSwitch isOn={isEnabled} label="הפעל מצב שבת" onToggle={() => setEnabled(!isEnabled)} />
       </div>
@@ -461,10 +470,12 @@ export function App() {
 
   useEffect(() => {
     void loadDevices();
+    startShabbatRunner();
     const updateOnline = () => setOffline(!navigator.onLine);
     window.addEventListener('online', updateOnline);
     window.addEventListener('offline', updateOnline);
     return () => {
+      stopShabbatRunner();
       window.removeEventListener('online', updateOnline);
       window.removeEventListener('offline', updateOnline);
     };
