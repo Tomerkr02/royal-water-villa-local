@@ -4,7 +4,7 @@ import type { DeviceId, DeviceState, DeviceStateMap } from '../../types/device';
 import type { ControlProvider } from '../../types/provider';
 
 const STORAGE_KEY = 'royal-water-villa:cloud-device-states';
-const CONTROL_ENDPOINT = 'https://royal-water-villa-system.vercel.app/api/tuya/control';
+const CONTROL_ENDPOINT = '/api/tuya/control';
 
 interface TuyaControlResponse {
   success?: boolean;
