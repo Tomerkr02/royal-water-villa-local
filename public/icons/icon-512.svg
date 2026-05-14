@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Royal Water Villa">
+  <rect width="512" height="512" rx="112" fill="#090807"/>
+  <path d="M90 314c56-27 101-27 154 0s98 27 178 0" fill="none" stroke="#7fb7b4" stroke-width="28" stroke-linecap="round"/>
+  <path d="M134 254 256 110l122 144" fill="none" stroke="#d7b46a" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M188 254v112h136V254" fill="none" stroke="#f5efe1" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
