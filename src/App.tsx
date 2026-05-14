@@ -102,7 +102,7 @@ function ToggleSwitch({ isOn, onToggle, label }: { isOn: boolean; onToggle: () =
       aria-label={label}
       aria-pressed={isOn}
       onClick={onToggle}
-      className={`relative h-14 w-28 rounded-full border transition ${
+      className={`toggle-switch relative h-14 w-28 rounded-full border transition ${
         isOn
           ? 'border-villa-gold bg-villa-gold/85 shadow-glow'
           : 'border-white/10 bg-white/10'
@@ -139,7 +139,7 @@ function TimeStepper({
   };
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="time-stepper flex items-center gap-3">
       {nullable ? (
         <button
           type="button"
@@ -149,14 +149,14 @@ function TimeStepper({
           {value ? t.common.clearTime : t.common.addTime}
         </button>
       ) : null}
-      <div className={`flex items-center gap-2 ${nullable && !value ? 'opacity-40' : ''}`}>
+      <div className={`time-stepper-controls flex items-center gap-2 ${nullable && !value ? 'opacity-40' : ''}`}>
         <button className="icon-button" type="button" onClick={() => setTime(hour + 1, minute)}>
           <Plus size={20} />
         </button>
         <button className="icon-button" type="button" onClick={() => setTime(hour, minute + 15)}>
           <Plus size={16} />
         </button>
-        <div className="min-w-24 rounded-2xl border border-villa-gold/30 bg-black/25 px-5 py-3 text-center text-2xl font-semibold text-villa-pearl">
+        <div className="time-display min-w-24 rounded-2xl border border-villa-gold/30 bg-black/25 px-5 py-3 text-center text-2xl font-semibold text-villa-pearl">
           {value ?? '--:--'}
         </div>
         <button className="icon-button" type="button" onClick={() => setTime(hour, minute - 15)}>
@@ -443,7 +443,7 @@ function ShabbatCard({ schedule }: { schedule: ShabbatDeviceSchedule }) {
 
 function SettingRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-black/18 p-4">
+    <div className="setting-row flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-black/18 p-4">
       <span className="text-xl font-medium text-villa-pearl">{label}</span>
       {children}
     </div>
@@ -521,8 +521,8 @@ function ScreenFrame({ title, subtitle, children }: { title: string; subtitle: s
     <motion.main variants={screenVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.24 }}>
       <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-5xl font-semibold leading-tight text-villa-pearl">{title}</h1>
-          <p className="mt-3 text-xl text-villa-mist">{subtitle}</p>
+          <h1 className="screen-title text-5xl font-semibold leading-tight text-villa-pearl">{title}</h1>
+          <p className="screen-subtitle mt-3 text-xl text-villa-mist">{subtitle}</p>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-3">
           <LanguageSwitcher />
@@ -579,12 +579,12 @@ export function App() {
           />
         </AnimatePresence>
       </div>
-      <div className="relative z-10 grid min-h-screen grid-cols-[112px_1fr]">
-        <nav className="border-l border-white/10 bg-black/20 px-3 py-6 backdrop-blur-2xl">
-          <div className="mb-9 flex h-16 items-center justify-center rounded-3xl border border-villa-gold/35 bg-villa-gold/10 text-villa-gold">
+      <div className="responsive-shell relative z-10 grid min-h-screen grid-cols-[112px_1fr]">
+        <nav className="app-nav border-l border-white/10 bg-black/20 px-3 py-6 backdrop-blur-2xl">
+          <div className="brand-mark mb-9 flex h-16 items-center justify-center rounded-3xl border border-villa-gold/35 bg-villa-gold/10 text-villa-gold">
             <Sun size={32} />
           </div>
-          <div className="space-y-3">
+          <div className="nav-items space-y-3">
             {navItems.map((item) => {
               const Icon = item.icon;
               const active = item.id === screen;
@@ -599,13 +599,17 @@ export function App() {
                   title={label}
                 >
                   <Icon size={28} />
+                  <span className="nav-label">{label}</span>
                   {active ? <Check size={14} className="absolute left-2 top-2" /> : null}
                 </button>
               );
             })}
           </div>
         </nav>
-        <section className="h-screen overflow-y-auto px-7 py-6 lg:px-10">
+        <section className="app-content h-screen overflow-y-auto px-7 py-6 lg:px-10">
+          <div className="rotate-hint mb-4 rounded-2xl border border-villa-gold/25 bg-black/45 px-4 py-3 text-sm font-semibold text-villa-pearl backdrop-blur-xl">
+            {t.common.rotateHint}
+          </div>
           {isLoading ? (
             <div className="flex h-full items-center justify-center text-2xl text-villa-mist">{t.common.loading}</div>
           ) : (
