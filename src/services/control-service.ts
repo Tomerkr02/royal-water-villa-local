@@ -1,9 +1,9 @@
 import type { DeviceId, DeviceState } from '../types/device';
 import type { ControlProvider } from '../types/provider';
-import { MockProvider } from './providers/mock-provider';
+import { createProvider } from './provider-registry';
 
 class ControlService {
-  private provider: ControlProvider = new MockProvider();
+  private provider: ControlProvider = createProvider();
 
   setProvider(provider: ControlProvider) {
     this.provider = provider;

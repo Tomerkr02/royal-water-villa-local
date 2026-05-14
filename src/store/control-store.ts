@@ -33,16 +33,24 @@ export const useControlStore = create<ControlStore>((set, get) => ({
   },
 
   async setDeviceState(deviceId, isOn) {
-    const updated = await controlService.setDeviceState(deviceId, isOn);
-    const states = get().states;
-    if (states) {
-      set({ states: { ...states, [deviceId]: updated } });
+    try {
+      const updated = await controlService.setDeviceState(deviceId, isOn);
+      const states = get().states;
+      if (states) {
+        set({ states: { ...states, [deviceId]: updated } });
+      }
+    } catch (error) {
+      console.error('[ControlStore] device command failed', { deviceId, isOn, error });
     }
   },
 
   async turnOffAll() {
-    const states = await controlService.turnOffAll();
-    set({ states });
+    try {
+      const states = await controlService.turnOffAll();
+      set({ states });
+    } catch (error) {
+      console.error('[ControlStore] turnOffAll failed', { error });
+    }
   },
 
   setOffline(isOffline) {
