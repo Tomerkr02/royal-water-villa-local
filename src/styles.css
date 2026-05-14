@@ -35,11 +35,17 @@ span {
 .app-background {
   position: fixed;
   inset: 0;
-  background:
-    linear-gradient(115deg, rgba(9, 8, 7, 0.3), rgba(9, 8, 7, 0.95)),
-    url('https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1800&q=80');
-  background-size: cover;
-  background-position: center;
+  overflow: hidden;
+  background: #090807;
+}
+
+.app-background-image {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+  object-position: center;
 }
 
 .app-background::after {
@@ -47,9 +53,9 @@ span {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, rgba(9, 8, 7, 0.22), rgba(9, 8, 7, 0.86)),
-    radial-gradient(circle at 20% 15%, rgba(215, 180, 106, 0.18), transparent 32%),
-    radial-gradient(circle at 78% 70%, rgba(127, 183, 180, 0.12), transparent 30%);
+    linear-gradient(110deg, rgba(9, 8, 7, 0.64), rgba(9, 8, 7, 0.8)),
+    linear-gradient(180deg, rgba(9, 8, 7, 0.24), rgba(9, 8, 7, 0.9)),
+    radial-gradient(circle at 20% 15%, rgba(215, 180, 106, 0.18), transparent 32%);
 }
 
 .glass-panel {
@@ -62,16 +68,31 @@ span {
 }
 
 .hero-panel {
+  position: relative;
+  overflow: hidden;
   min-height: 500px;
   border-radius: 28px;
   border: 1px solid rgba(215, 180, 106, 0.24);
-  background:
-    linear-gradient(95deg, rgba(9, 8, 7, 0.86), rgba(9, 8, 7, 0.35)),
-    url('https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=1600&q=80');
-  background-position: center;
-  background-size: cover;
+  background: #11100e;
   box-shadow: 0 28px 110px rgba(0, 0, 0, 0.42);
   padding: 48px;
+}
+
+.hero-panel-image {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.hero-panel-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(92deg, rgba(9, 8, 7, 0.9), rgba(9, 8, 7, 0.46)),
+    linear-gradient(180deg, rgba(9, 8, 7, 0.08), rgba(9, 8, 7, 0.5));
 }
 
 .device-tile {
@@ -79,12 +100,32 @@ span {
   transition:
     border-color 180ms ease,
     transform 180ms ease,
-    background 180ms ease;
+    background 180ms ease,
+    box-shadow 180ms ease;
 }
 
 .device-on {
-  border-color: rgba(215, 180, 106, 0.5);
-  background: linear-gradient(145deg, rgba(58, 45, 25, 0.78), rgba(18, 16, 13, 0.72));
+  border-color: rgba(215, 180, 106, 0.7);
+  background: linear-gradient(145deg, rgba(62, 48, 26, 0.82), rgba(20, 17, 12, 0.76));
+  box-shadow:
+    0 24px 90px rgba(0, 0, 0, 0.34),
+    0 0 42px rgba(215, 180, 106, 0.22);
+}
+
+.status-on,
+.status-off {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.status-on {
+  border-color: rgba(215, 180, 106, 0.42);
+  background: rgba(215, 180, 106, 0.18);
+  color: #f5d991;
+}
+
+.status-off {
+  background: rgba(255, 255, 255, 0.08);
+  color: #9ca4a5;
 }
 
 .nav-button,
@@ -157,8 +198,10 @@ span {
   gap: 6px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(9, 8, 7, 0.52);
+  backdrop-filter: blur(18px);
   padding: 5px;
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.24);
 }
 
 .language-option {

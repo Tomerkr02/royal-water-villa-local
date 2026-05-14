@@ -21,6 +21,10 @@ import {
   Waves,
   WifiOff
 } from 'lucide-react';
+import bedroomLightingImage from './assets/images/royal-water-villa-bedroom-lighting-design-18.png';
+import blueWaterNightImage from './assets/images/royal-water-villa-blue-water-night-view-25.png';
+import outdoorLoungeImage from './assets/images/royal-water-villa-outdoor-lounge-night-08.png';
+import poolFruitTrayImage from './assets/images/royal-water-villa-pool-fruit-tray-20.png';
 import { languageLabels, type Language, type Translation } from './i18n/translations';
 import { useI18n, useLanguageStore } from './i18n/language-store';
 import { startShabbatRunner, stopShabbatRunner } from './services/shabbat-runner';
@@ -51,6 +55,14 @@ const screenVariants = {
   initial: { opacity: 0, y: 18 },
   animate: { opacity: 1, y: 0 },
   exit: { opacity: 0, y: -12 }
+};
+
+const screenImages: Record<Screen, string> = {
+  home: blueWaterNightImage,
+  lighting: outdoorLoungeImage,
+  scenes: outdoorLoungeImage,
+  shabbat: bedroomLightingImage,
+  guest: poolFruitTrayImage
 };
 
 function groupByArea(devices: Device[]) {
@@ -175,6 +187,9 @@ function DeviceTile({ device }: { device: Device }) {
           <div>
             <h3 className="text-2xl font-semibold text-villa-pearl">{t.devices[device.id]}</h3>
             <p className="mt-1 text-base text-villa-mist">{t.areas[device.area]}</p>
+            <span className={`mt-4 inline-flex rounded-full px-3 py-1 text-sm font-bold ${isOn ? 'status-on' : 'status-off'}`}>
+              {isOn ? t.common.deviceOn : t.common.deviceOff}
+            </span>
           </div>
         </div>
         <ToggleSwitch
@@ -240,13 +255,15 @@ function HomeScreen({ goTo }: { goTo: (screen: Screen) => void }) {
     <ScreenFrame title={t.home.title} subtitle={t.home.subtitle}>
       <div className="grid gap-5 xl:grid-cols-[1.35fr_0.65fr]">
         <section className="hero-panel">
-          <div className="max-w-3xl">
+          <img className="hero-panel-image" src={blueWaterNightImage} alt="" aria-hidden="true" />
+          <div className="hero-panel-overlay" />
+          <div className="relative z-10 max-w-3xl">
             <p className="mb-4 text-xl text-villa-gold">{t.home.eyebrow}</p>
-            <h2 className="text-6xl font-semibold leading-tight text-villa-pearl">
+            <h2 className="whitespace-pre-line text-6xl font-semibold leading-tight text-villa-pearl">
               {t.home.headline}
             </h2>
           </div>
-          <div className="mt-10 flex flex-wrap gap-4">
+          <div className="relative z-10 mt-10 flex flex-wrap gap-4">
             <button className="primary-button" type="button" onClick={() => goTo('lighting')}>
               <Lamp size={24} />
               {t.home.lightingButton}
@@ -547,7 +564,21 @@ export function App() {
 
   return (
     <div className="min-h-screen overflow-hidden bg-villa-ink text-villa-pearl" dir={direction}>
-      <div className="app-background" />
+      <div className="app-background">
+        <AnimatePresence mode="wait">
+          <motion.img
+            key={screen}
+            src={screenImages[screen]}
+            alt=""
+            aria-hidden="true"
+            className="app-background-image"
+            initial={{ opacity: 0, scale: 1.02 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.45 }}
+          />
+        </AnimatePresence>
+      </div>
       <div className="relative z-10 grid min-h-screen grid-cols-[112px_1fr]">
         <nav className="border-l border-white/10 bg-black/20 px-3 py-6 backdrop-blur-2xl">
           <div className="mb-9 flex h-16 items-center justify-center rounded-3xl border border-villa-gold/35 bg-villa-gold/10 text-villa-gold">

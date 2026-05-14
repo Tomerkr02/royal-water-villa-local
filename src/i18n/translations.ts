@@ -32,17 +32,19 @@ export const translations = {
       inactive: 'לא פעיל',
       loading: 'טוען את הווילה...',
       addTime: 'הוסף שעה',
-      clearTime: 'בטל שעה'
+      clearTime: 'בטל שעה',
+      deviceOn: 'דולק',
+      deviceOff: 'כבוי'
     },
     home: {
       title: 'Royal Water Villa',
-      subtitle: 'שליטה מקומית, רגועה ומוכנה לאורחי הווילה',
+      subtitle: 'שליטה חכמה ונוחה לחוויית אירוח מושלמת.',
       eyebrow: 'טאבלט שליטה פרטי',
-      headline: 'ערב שקט, תאורה מדויקת, הכל במקום אחד.',
+      headline: 'תאורה, אווירה ונוחות\nבמגע אחד.',
       lightingButton: 'שליטה בתאורה',
       turnOffAll: 'כבה הכל',
       shabbatTitle: 'מצב שבת',
-      shabbatDescription: 'הגדרה פשוטה לכל חדר, עם סיכום ברור לפני הפעלה.',
+      shabbatDescription: 'הגדירו מראש תאורה אוטומטית לשבת.',
       shabbatActive: 'מצב שבת פעיל',
       shabbatActiveNote: 'הטאבלט יבצע את הפעולות בזמן שהאפליקציה פתוחה.',
       activeDevices: 'מכשירים דולקים עכשיו'
@@ -54,8 +56,8 @@ export const translations = {
       turnOff: 'כבה'
     },
     scenes: {
-      title: 'תרחישים',
-      subtitle: 'פעולות מוכנות מראש לאווירה הנכונה',
+      title: 'מצבים ואווירה',
+      subtitle: 'הפעילו אווירה מושלמת בלחיצה אחת',
       poolEvening: 'ערב בבריכה',
       calmHosting: 'אירוח רגוע',
       quietNight: 'לילה שקט',
@@ -138,17 +140,19 @@ export const translations = {
       inactive: 'Inactive',
       loading: 'Loading the villa...',
       addTime: 'Add time',
-      clearTime: 'Clear time'
+      clearTime: 'Clear time',
+      deviceOn: 'On',
+      deviceOff: 'Off'
     },
     home: {
       title: 'Royal Water Villa',
-      subtitle: 'Calm local control for villa guests',
+      subtitle: 'Smart, effortless control for a perfect hospitality experience.',
       eyebrow: 'Private control tablet',
-      headline: 'Quiet evening, precise lighting, everything in one place.',
+      headline: 'Lighting, atmosphere and comfort\nwith one touch.',
       lightingButton: 'Control lighting',
       turnOffAll: 'Turn off all',
       shabbatTitle: 'Shabbat Mode',
-      shabbatDescription: 'Simple room-by-room setup with a clear summary before activation.',
+      shabbatDescription: 'Preset automatic lighting for Shabbat.',
       shabbatActive: 'Shabbat Mode active',
       shabbatActiveNote: 'The tablet will run actions while the app is open.',
       activeDevices: 'Devices currently on'
@@ -160,8 +164,8 @@ export const translations = {
       turnOff: 'Turn off'
     },
     scenes: {
-      title: 'Scenes',
-      subtitle: 'Ready-made actions for the right atmosphere',
+      title: 'Modes And Atmosphere',
+      subtitle: 'Create the perfect mood with one touch',
       poolEvening: 'Pool Evening',
       calmHosting: 'Calm Hosting',
       quietNight: 'Quiet Night',
@@ -244,17 +248,19 @@ export const translations = {
       inactive: 'Inactif',
       loading: 'Chargement de la villa...',
       addTime: 'Ajouter',
-      clearTime: 'Retirer'
+      clearTime: 'Retirer',
+      deviceOn: 'Allumé',
+      deviceOff: 'Éteint'
     },
     home: {
       title: 'Royal Water Villa',
-      subtitle: 'Contrôle local et serein pour les invités de la villa',
+      subtitle: 'Un contrôle intelligent et simple pour une expérience d’accueil parfaite.',
       eyebrow: 'Tablette de contrôle privée',
-      headline: 'Soirée calme, éclairage précis, tout au même endroit.',
+      headline: 'Éclairage, ambiance et confort\nd’un simple geste.',
       lightingButton: "Contrôler l'éclairage",
       turnOffAll: 'Tout éteindre',
       shabbatTitle: 'Mode Chabbat',
-      shabbatDescription: 'Réglage simple par pièce, avec un résumé clair avant activation.',
+      shabbatDescription: 'Programmez à l’avance l’éclairage automatique pour Chabbat.',
       shabbatActive: 'Mode Chabbat actif',
       shabbatActiveNote: "La tablette exécutera les actions tant que l'application reste ouverte.",
       activeDevices: 'Appareils allumés'
@@ -266,8 +272,8 @@ export const translations = {
       turnOff: 'Éteindre'
     },
     scenes: {
-      title: 'Scènes',
-      subtitle: "Actions prêtes pour créer l'ambiance souhaitée",
+      title: 'Modes Et Ambiance',
+      subtitle: "Créez l'ambiance parfaite en un seul geste",
       poolEvening: 'Soirée Piscine',
       calmHosting: 'Accueil Calme',
       quietNight: 'Nuit Paisible',
