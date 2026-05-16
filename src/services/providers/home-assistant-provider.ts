@@ -25,7 +25,7 @@ function writeStates(states: DeviceStateMap) {
 }
 
 async function requestHomeAssistantService(endpoint: 'turn-on' | 'turn-off' | 'toggle', entityId: string) {
-  console.info('[HomeAssistantProvider] service request', { endpoint, entityId });
+  console.info('[HA] Toggle requested', { endpoint, entityId });
   const response = await fetch(`/api/home-assistant/${endpoint}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -37,7 +37,7 @@ async function requestHomeAssistantService(endpoint: 'turn-on' | 'turn-off' | 't
     throw new Error(payload.error ?? `Home Assistant ${endpoint} failed with ${response.status}`);
   }
 
-  console.info('[HomeAssistantProvider] service success', { endpoint, entityId, payload });
+  console.info('[HA] Toggle success', { endpoint, entityId, payload });
 }
 
 export class HomeAssistantProvider implements ControlProvider {
@@ -45,7 +45,7 @@ export class HomeAssistantProvider implements ControlProvider {
   private readonly fallback = new CloudProvider();
 
   async getDevices() {
-    console.info('[HomeAssistantProvider] getDevices');
+    console.info('[HA] Loading states');
     const cachedStates = readStates();
 
     try {
@@ -79,11 +79,16 @@ export class HomeAssistantProvider implements ControlProvider {
       }
 
       writeStates(next);
-      return { devices, states: next, localSystemOnline: true };
+      console.info('[HA] States loaded');
+      return { devices, states: next, localSystemOnline: true, localSystemError: null };
     } catch (error) {
-      console.error('[HomeAssistantProvider] getDevices failed; using Tuya fallback', { error });
+      console.error('[HA] States failed, falling back to Tuya', { error });
       const fallbackResult = await this.fallback.getDevices();
-      return { ...fallbackResult, localSystemOnline: false };
+      return {
+        ...fallbackResult,
+        localSystemOnline: false,
+        localSystemError: error instanceof Error ? error.message : 'Home Assistant states unavailable'
+      };
     }
   }
 
@@ -92,7 +97,7 @@ export class HomeAssistantProvider implements ControlProvider {
     const nextIsOn = Boolean(state.isOn);
 
     if (!mapping) {
-      console.info('[HomeAssistantProvider] missing HA mapping; using Tuya fallback', { deviceId });
+      console.error('[HA] Toggle failed, falling back to Tuya', { deviceId, error: 'Missing Home Assistant mapping' });
       return this.fallback.setDeviceState(deviceId, state);
     }
 
@@ -103,7 +108,7 @@ export class HomeAssistantProvider implements ControlProvider {
       writeStates(states);
       return states[deviceId];
     } catch (error) {
-      console.error('[HomeAssistantProvider] command failed; using Tuya fallback', { deviceId, error });
+      console.error('[HA] Toggle failed, falling back to Tuya', { deviceId, error });
       return this.fallback.setDeviceState(deviceId, state);
     }
   }

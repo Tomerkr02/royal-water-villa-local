@@ -3,6 +3,19 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+  server: {
+    proxy: {
+      '/api/home-assistant': {
+        target: 'http://127.0.0.1:8787',
+        changeOrigin: true
+      },
+      '/api/tuya': {
+        target: 'https://royal-water-villa-system.vercel.app',
+        changeOrigin: true,
+        secure: true
+      }
+    }
+  },
   plugins: [
     react(),
     VitePWA({

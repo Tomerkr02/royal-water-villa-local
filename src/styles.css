@@ -293,6 +293,15 @@ span {
   backdrop-filter: blur(16px);
 }
 
+.ha-debug-line {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(9, 8, 7, 0.38);
+  padding: 8px 12px;
+  color: #c9d0ce;
+  backdrop-filter: blur(14px);
+}
+
 .connection-connected {
   border-color: rgba(135, 148, 111, 0.34);
   color: #eff8d7;

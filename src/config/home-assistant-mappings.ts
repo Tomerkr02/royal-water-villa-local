@@ -5,9 +5,42 @@ export interface HomeAssistantDeviceMapping {
 }
 
 export const homeAssistantDeviceMappings: Partial<Record<DeviceId, HomeAssistantDeviceMapping>> = {
-  // Demo mapping. Replace with the real villa entity_id when Home Assistant is installed locally.
+  wallLight: {
+    entityId: 'switch.wall_light'
+  },
+  pergolaLight: {
+    entityId: 'switch.pergola_light'
+  },
+  livingRoomLedWall: {
+    entityId: 'light.living_room_led_wall'
+  },
+  livingRoomCeilingSpots: {
+    entityId: 'light.living_room_ceiling_spots'
+  },
+  barLight: {
+    entityId: 'switch.bar_light'
+  },
+  // Demo mapping example. Replace these entity_id values with the real villa Home Assistant entities.
   poolLight: {
     entityId: 'light.pool_light'
+  },
+  rearPathLight: {
+    entityId: 'switch.rear_path_light'
+  },
+  outdoorWallLight: {
+    entityId: 'switch.outdoor_wall_light'
+  },
+  bathroomLight: {
+    entityId: 'light.bathroom_light'
+  },
+  ceilingFan: {
+    entityId: 'fan.ceiling_fan'
+  },
+  ceilingFanLight: {
+    entityId: 'light.ceiling_fan_light'
+  },
+  bathroomHeater: {
+    entityId: 'switch.bathroom_heater'
   }
 };
 

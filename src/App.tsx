@@ -218,6 +218,7 @@ function StatusRibbon() {
   const isSyncing = useControlStore((state) => state.isSyncing);
   const controlError = useControlStore((state) => state.controlError);
   const localSystemOnline = useControlStore((state) => state.localSystemOnline);
+  const localSystemError = useControlStore((state) => state.localSystemError);
 
   const label = isOffline
     ? t.common.offlineStatus
@@ -242,6 +243,10 @@ function StatusRibbon() {
       <span className={`connection-pill ${statusClass}`}>
         {isOffline ? <WifiOff size={16} /> : null}
         {label}
+      </span>
+      <span className="ha-debug-line">
+        {t.common.haMode}: {localSystemOnline ? t.common.haActive : t.common.haUnavailable} · {t.common.lastHaError}:{' '}
+        {localSystemError ?? t.common.noHaError}
       </span>
     </div>
   );
