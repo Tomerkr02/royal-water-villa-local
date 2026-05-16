@@ -217,6 +217,7 @@ function StatusRibbon() {
   const isOffline = useControlStore((state) => state.isOffline);
   const isSyncing = useControlStore((state) => state.isSyncing);
   const controlError = useControlStore((state) => state.controlError);
+  const localSystemOnline = useControlStore((state) => state.localSystemOnline);
 
   const label = isOffline
     ? t.common.offlineStatus
@@ -224,8 +225,17 @@ function StatusRibbon() {
       ? t.common.controlErrorStatus
       : isSyncing
         ? t.common.syncingStatus
-        : t.common.connectedStatus;
-  const statusClass = isOffline || controlError ? 'connection-error' : isSyncing ? 'connection-syncing' : 'connection-connected';
+        : localSystemOnline === false
+          ? t.common.localSystemOffline
+          : localSystemOnline === true
+            ? t.common.localSystemOnline
+            : t.common.connectedStatus;
+  const statusClass =
+    isOffline || controlError || localSystemOnline === false
+      ? 'connection-error'
+      : isSyncing
+        ? 'connection-syncing'
+        : 'connection-connected';
 
   return (
     <div className="flex flex-wrap items-center gap-3 text-sm text-villa-mist">

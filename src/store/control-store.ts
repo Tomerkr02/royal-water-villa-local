@@ -12,6 +12,7 @@ interface ControlStore {
   isSyncing: boolean;
   isOffline: boolean;
   controlError: string | null;
+  localSystemOnline: boolean | null;
   providerName: string;
   loadDevices: () => Promise<void>;
   syncDevices: () => Promise<void>;
@@ -27,6 +28,7 @@ export const useControlStore = create<ControlStore>((set, get) => ({
   isSyncing: false,
   isOffline: typeof navigator !== 'undefined' ? !navigator.onLine : false,
   controlError: null,
+  localSystemOnline: null,
   providerName: controlService.getProviderName(),
 
   async loadDevices() {
@@ -37,6 +39,7 @@ export const useControlStore = create<ControlStore>((set, get) => ({
         devices: result.devices,
         states: result.states,
         providerName: controlService.getProviderName(),
+        localSystemOnline: result.localSystemOnline ?? null,
         controlError: null,
         isLoading: false
       });
@@ -62,6 +65,7 @@ export const useControlStore = create<ControlStore>((set, get) => ({
         devices: result.devices,
         states: result.states,
         providerName: controlService.getProviderName(),
+        localSystemOnline: result.localSystemOnline ?? null,
         controlError: null,
         isSyncing: false
       });
