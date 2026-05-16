@@ -99,12 +99,23 @@ function describeLocalizedSchedule(schedule: ShabbatDeviceSchedule, t: Translati
   return parts.join(' · ');
 }
 
-function ToggleSwitch({ isOn, onToggle, label }: { isOn: boolean; onToggle: () => void; label: string }) {
+function ToggleSwitch({
+  isOn,
+  onToggle,
+  label,
+  disabled = false
+}: {
+  isOn: boolean;
+  onToggle: () => void;
+  label: string;
+  disabled?: boolean;
+}) {
   return (
     <button
       type="button"
       aria-label={label}
       aria-pressed={isOn}
+      disabled={disabled}
       onClick={onToggle}
       className={`toggle-switch relative h-14 w-28 rounded-full border transition ${
         isOn
@@ -179,6 +190,7 @@ function DeviceTile({ device }: { device: Device }) {
   const states = useControlStore((state) => state.states);
   const setDeviceState = useControlStore((state) => state.setDeviceState);
   const isOn = states?.[device.id]?.isOn ?? false;
+  const isAvailable = states?.[device.id]?.isAvailable ?? true;
   const Icon = areaIcons[device.area];
 
   return (
@@ -187,7 +199,7 @@ function DeviceTile({ device }: { device: Device }) {
       whileHover={{ y: -3 }}
       whileTap={{ scale: 0.985 }}
       transition={{ duration: 0.18 }}
-      className={`glass-panel device-tile ${isOn ? 'device-on' : ''}`}
+      className={`glass-panel device-tile ${isOn ? 'device-on' : ''} ${!isAvailable ? 'device-unavailable' : ''}`}
     >
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-3">
@@ -198,17 +210,55 @@ function DeviceTile({ device }: { device: Device }) {
             <h3 className="text-2xl font-semibold text-villa-pearl">{t.devices[device.id]}</h3>
             <p className="mt-1 text-base text-villa-mist">{t.areas[device.area]}</p>
             <span className={`mt-4 inline-flex rounded-full px-3 py-1 text-sm font-bold ${isOn ? 'status-on' : 'status-off'}`}>
-              {isOn ? t.common.deviceOn : t.common.deviceOff}
+              {!isAvailable ? t.common.unavailable : isOn ? t.common.deviceOn : t.common.deviceOff}
             </span>
           </div>
         </div>
         <ToggleSwitch
           isOn={isOn}
+          disabled={!isAvailable}
           label={`${isOn ? t.lighting.turnOff : t.lighting.turnOn} ${t.devices[device.id]}`}
           onToggle={() => void setDeviceState(device.id, !isOn)}
         />
       </div>
     </motion.div>
+  );
+}
+
+function HomeAssistantDebugPanel() {
+  const { t } = useI18n();
+  const entities = useControlStore((state) => state.homeAssistantEntities);
+  const relevantDomains = new Set(['light', 'switch', 'cover', 'fan', 'climate']);
+
+  return (
+    <div className="glass-panel ha-entities-panel">
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h3 className="text-2xl font-semibold text-villa-pearl">{t.common.haEntities}</h3>
+          <p className="mt-1 text-sm text-villa-mist">{t.common.haRelevantOnly}</p>
+        </div>
+        <span className="quiet-pill">{entities.length}</span>
+      </div>
+      <div className="ha-entities-list">
+        {entities.map((entity) => {
+          const isRelevant = relevantDomains.has(entity.domain);
+          return (
+            <div key={entity.entityId} className={`ha-entity-row ${isRelevant ? 'ha-entity-relevant' : ''}`}>
+              <div className="min-w-0">
+                <p className="truncate font-semibold text-villa-pearl">{entity.entityId}</p>
+                <p className="truncate text-sm text-villa-mist">{entity.friendlyName}</p>
+              </div>
+              <div className="flex flex-wrap justify-end gap-2 text-xs font-bold">
+                <span className="ha-entity-chip">{entity.domain}</span>
+                <span className={entity.state === 'on' || entity.state === 'open' ? 'status-on rounded-full px-3 py-1' : 'status-off rounded-full px-3 py-1'}>
+                  {entity.state}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -218,7 +268,6 @@ function StatusRibbon() {
   const isSyncing = useControlStore((state) => state.isSyncing);
   const controlError = useControlStore((state) => state.controlError);
   const localSystemOnline = useControlStore((state) => state.localSystemOnline);
-  const localSystemError = useControlStore((state) => state.localSystemError);
 
   const label = isOffline
     ? t.common.offlineStatus
@@ -243,10 +292,6 @@ function StatusRibbon() {
       <span className={`connection-pill ${statusClass}`}>
         {isOffline ? <WifiOff size={16} /> : null}
         {label}
-      </span>
-      <span className="ha-debug-line">
-        {t.common.haMode}: {localSystemOnline ? t.common.haActive : t.common.haUnavailable} · {t.common.lastHaError}:{' '}
-        {localSystemError ?? t.common.noHaError}
       </span>
     </div>
   );
@@ -648,6 +693,26 @@ function GuestInfoScreen() {
   );
 }
 
+function DeveloperHomeAssistantScreen() {
+  const { t } = useI18n();
+  const localSystemOnline = useControlStore((state) => state.localSystemOnline);
+  const localSystemError = useControlStore((state) => state.localSystemError);
+
+  return (
+    <ScreenFrame title={t.common.haEntities} subtitle={t.common.haRelevantOnly}>
+      <div className="mb-5 flex flex-wrap gap-3 text-sm text-villa-mist">
+        <span className="ha-debug-line">
+          {t.common.haMode}: {localSystemOnline ? t.common.haActive : t.common.haUnavailable}
+        </span>
+        <span className="ha-debug-line">
+          {t.common.lastHaError}: {localSystemError ?? t.common.noHaError}
+        </span>
+      </div>
+      <HomeAssistantDebugPanel />
+    </ScreenFrame>
+  );
+}
+
 function ScreenFrame({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
   return (
     <motion.main variants={screenVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.24 }}>
@@ -673,6 +738,8 @@ export function App() {
   const syncDevices = useControlStore((state) => state.syncDevices);
   const setOffline = useControlStore((state) => state.setOffline);
   const isLoading = useControlStore((state) => state.isLoading);
+  const isDeveloperRoute = typeof window !== 'undefined' && window.location.pathname === '/developer/home-assistant';
+  const backgroundImage = isDeveloperRoute ? outdoorLoungeImage : screenImages[screen];
 
   useEffect(() => {
     void loadDevices();
@@ -701,13 +768,15 @@ export function App() {
     };
   }, [loadDevices, setOffline, syncDevices]);
 
-  const content = {
-    home: <HomeScreen goTo={setScreen} />,
-    lighting: <LightingScreen />,
-    scenes: <ScenesScreen />,
-    shabbat: <ShabbatScreen />,
-    guest: <GuestInfoScreen />
-  }[screen];
+  const content = isDeveloperRoute
+    ? <DeveloperHomeAssistantScreen />
+    : {
+      home: <HomeScreen goTo={setScreen} />,
+      lighting: <LightingScreen />,
+      scenes: <ScenesScreen />,
+      shabbat: <ShabbatScreen />,
+      guest: <GuestInfoScreen />
+    }[screen];
 
   return (
     <div className="min-h-screen overflow-hidden bg-villa-ink text-villa-pearl" dir={direction}>
@@ -715,8 +784,8 @@ export function App() {
       <div className="app-background">
         <AnimatePresence mode="wait">
           <motion.img
-            key={screen}
-            src={screenImages[screen]}
+            key={isDeveloperRoute ? 'developer-home-assistant' : screen}
+            src={backgroundImage}
             alt=""
             aria-hidden="true"
             className="app-background-image"

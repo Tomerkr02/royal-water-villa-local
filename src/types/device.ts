@@ -47,6 +47,7 @@ export type Device = SwitchDevice | FanDevice;
 
 export interface DeviceState {
   isOn: boolean;
+  isAvailable?: boolean;
   speed?: 1 | 2 | 3;
 }
 

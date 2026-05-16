@@ -57,7 +57,10 @@ export const translations = {
       nextShabbatAction: 'הפעולה הבאה',
       noNextShabbatAction: 'אין פעולה מתוזמנת',
       turnOnAction: 'הדלקה',
-      turnOffAction: 'כיבוי'
+      turnOffAction: 'כיבוי',
+      unavailable: 'לא זמין',
+      haEntities: 'ישויות Home Assistant',
+      haRelevantOnly: 'רלוונטיות לשליטה מודגשות'
     },
     home: {
       title: 'Royal Water Villa',
@@ -188,7 +191,10 @@ export const translations = {
       nextShabbatAction: 'Next action',
       noNextShabbatAction: 'No scheduled action',
       turnOnAction: 'Turn on',
-      turnOffAction: 'Turn off'
+      turnOffAction: 'Turn off',
+      unavailable: 'Unavailable',
+      haEntities: 'Home Assistant entities',
+      haRelevantOnly: 'Control-relevant entities are highlighted'
     },
     home: {
       title: 'Royal Water Villa',
@@ -319,7 +325,10 @@ export const translations = {
       nextShabbatAction: 'Prochaine action',
       noNextShabbatAction: 'Aucune action programmée',
       turnOnAction: 'Allumer',
-      turnOffAction: 'Éteindre'
+      turnOffAction: 'Éteindre',
+      unavailable: 'Indisponible',
+      haEntities: 'Entités Home Assistant',
+      haRelevantOnly: 'Les entités utiles au contrôle sont mises en évidence'
     },
     home: {
       title: 'Royal Water Villa',

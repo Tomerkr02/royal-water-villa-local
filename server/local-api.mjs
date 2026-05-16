@@ -107,14 +107,16 @@ createServer(async (request, response) => {
     if (request.method === 'POST' && serviceMatch) {
       const body = await readBody(request);
       const entityId = body.entityId;
-      if (!entityId || typeof entityId !== 'string') {
+      const domain = body.domain;
+      if (!entityId || typeof entityId !== 'string' || !domain || typeof domain !== 'string') {
         response.writeHead(400, { 'Content-Type': 'application/json' });
-        response.end(JSON.stringify({ success: false, error: 'Missing entityId' }));
+        response.end(JSON.stringify({ success: false, error: 'Missing entityId or domain' }));
         return;
       }
 
-      const service = serviceMatch[1].replace('-', '_');
-      const upstream = await requestHomeAssistant(`/api/services/homeassistant/${service}`, {
+      const defaultService = serviceMatch[1].replace('-', '_');
+      const service = typeof body.service === 'string' ? body.service : defaultService;
+      const upstream = await requestHomeAssistant(`/api/services/${domain}/${service}`, {
         method: 'POST',
         body: JSON.stringify({ entity_id: entityId })
       });

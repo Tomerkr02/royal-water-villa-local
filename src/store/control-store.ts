@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { controlService } from '../services/control-service';
 import { useActivityLogStore } from './activity-log-store';
 import type { Device, DeviceId, DeviceStateMap } from '../types/device';
+import type { HomeAssistantDebugEntity } from '../types/home-assistant';
 
 const COMMAND_RETRY_DELAY_MS = 900;
 
@@ -14,6 +15,7 @@ interface ControlStore {
   controlError: string | null;
   localSystemOnline: boolean | null;
   localSystemError: string | null;
+  homeAssistantEntities: HomeAssistantDebugEntity[];
   providerName: string;
   loadDevices: () => Promise<void>;
   syncDevices: () => Promise<void>;
@@ -31,6 +33,7 @@ export const useControlStore = create<ControlStore>((set, get) => ({
   controlError: null,
   localSystemOnline: null,
   localSystemError: null,
+  homeAssistantEntities: [],
   providerName: controlService.getProviderName(),
 
   async loadDevices() {
@@ -43,6 +46,7 @@ export const useControlStore = create<ControlStore>((set, get) => ({
         providerName: controlService.getProviderName(),
         localSystemOnline: result.localSystemOnline ?? null,
         localSystemError: result.localSystemError ?? null,
+        homeAssistantEntities: result.homeAssistantEntities ?? [],
         controlError: null,
         isLoading: false
       });
@@ -70,6 +74,7 @@ export const useControlStore = create<ControlStore>((set, get) => ({
         providerName: controlService.getProviderName(),
         localSystemOnline: result.localSystemOnline ?? null,
         localSystemError: result.localSystemError ?? null,
+        homeAssistantEntities: result.homeAssistantEntities ?? get().homeAssistantEntities,
         controlError: null,
         isSyncing: false
       });
@@ -87,16 +92,6 @@ export const useControlStore = create<ControlStore>((set, get) => ({
       return;
     }
 
-    const previousStates = get().states;
-    if (previousStates) {
-      set({
-        states: {
-          ...previousStates,
-          [deviceId]: { ...previousStates[deviceId], isOn }
-        }
-      });
-    }
-
     try {
       let updated;
       try {
@@ -110,15 +105,16 @@ export const useControlStore = create<ControlStore>((set, get) => ({
       if (states) {
         set({ states: { ...states, [deviceId]: updated } });
       }
+      await get().syncDevices();
       useActivityLogStore.getState().addEntry({ deviceId, isOn, success: true });
       set({ controlError: null });
     } catch (error) {
       console.error('[ControlStore] device command failed', { deviceId, isOn, error });
       useActivityLogStore.getState().addEntry({ deviceId, isOn, success: false });
-      if (previousStates) {
-        set({ states: previousStates });
-      }
-      set({ controlError: 'command-failed' });
+      set({
+        controlError: 'command-failed',
+        localSystemError: error instanceof Error ? error.message : 'Home Assistant command failed'
+      });
     }
   },
 

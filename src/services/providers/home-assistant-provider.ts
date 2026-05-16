@@ -1,11 +1,11 @@
 import { homeAssistantDeviceMappings } from '../../config/home-assistant-mappings';
 import { defaultDeviceStates, devices } from '../../data/devices';
 import type { DeviceId, DeviceState, DeviceStateMap } from '../../types/device';
-import type { HomeAssistantServiceResponse, HomeAssistantState } from '../../types/home-assistant';
+import type { HomeAssistantDebugEntity, HomeAssistantServiceResponse, HomeAssistantState } from '../../types/home-assistant';
 import type { ControlProvider } from '../../types/provider';
-import { CloudProvider } from './cloud-provider';
 
 const STORAGE_KEY = 'royal-water-villa:home-assistant-device-states';
+const CONTROLLABLE_DOMAINS = new Set(['light', 'switch', 'cover', 'fan', 'climate']);
 
 function readStates(): DeviceStateMap {
   if (typeof localStorage === 'undefined') {
@@ -24,27 +24,116 @@ function writeStates(states: DeviceStateMap) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(states));
 }
 
-async function requestHomeAssistantService(endpoint: 'turn-on' | 'turn-off' | 'toggle', entityId: string) {
-  console.info('[HA] Toggle requested', { endpoint, entityId });
-  const response = await fetch(`/api/home-assistant/${endpoint}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ entityId })
-  });
+function getUnavailableStates(states: DeviceStateMap) {
+  const next = { ...states };
+  for (const device of devices) {
+    if (homeAssistantDeviceMappings[device.id]) {
+      next[device.id] = { ...next[device.id], isOn: false, isAvailable: false };
+    }
+  }
+  return next;
+}
 
-  const payload = (await response.json()) as HomeAssistantServiceResponse;
-  if (!response.ok || payload.success === false) {
-    throw new Error(payload.error ?? `Home Assistant ${endpoint} failed with ${response.status}`);
+function getDomain(entityId: string) {
+  return entityId.split('.')[0] ?? 'homeassistant';
+}
+
+function validateHomeAssistantMappings() {
+  for (const [deviceId, mapping] of Object.entries(homeAssistantDeviceMappings)) {
+    if (!mapping) {
+      continue;
+    }
+
+    const domain = getDomain(mapping.entityId);
+    if (!CONTROLLABLE_DOMAINS.has(domain)) {
+      console.error('[HA] invalid mapping ignored', {
+        deviceId,
+        entityId: mapping.entityId,
+        reason: `Domain ${domain} is not a guest-controllable domain`
+      });
+    }
+  }
+}
+
+function normalizeHomeAssistantEntities(states: HomeAssistantState[]): HomeAssistantDebugEntity[] {
+  return states.map((state) => ({
+    entityId: state.entity_id,
+    friendlyName: state.attributes?.friendly_name ?? state.entity_id,
+    domain: getDomain(state.entity_id),
+    state: state.state
+  }));
+}
+
+function getIsOnFromState(state: HomeAssistantState) {
+  const domain = getDomain(state.entity_id);
+  if (state.state === 'unavailable' || state.state === 'unknown') {
+    return { isOn: false, isAvailable: false };
+  }
+  if (domain === 'cover') {
+    return { isOn: state.state === 'open' || state.state === 'opening', isAvailable: true };
+  }
+  return { isOn: state.state === 'on', isAvailable: true };
+}
+
+function isValidControllableEntity(entityId: string) {
+  return CONTROLLABLE_DOMAINS.has(getDomain(entityId));
+}
+
+function getServiceRequest(entityId: string, nextIsOn: boolean) {
+  const domain = getDomain(entityId);
+  if (domain === 'cover') {
+    return {
+      endpoint: nextIsOn ? 'turn-on' : 'turn-off',
+      domain,
+      service: nextIsOn ? 'open_cover' : 'close_cover'
+    } as const;
   }
 
-  console.info('[HA] Toggle success', { endpoint, entityId, payload });
+  if (domain === 'light' || domain === 'switch') {
+    return {
+      endpoint: 'toggle',
+      domain,
+      service: 'toggle'
+    } as const;
+  }
+
+  return {
+    endpoint: nextIsOn ? 'turn-on' : 'turn-off',
+    domain,
+    service: nextIsOn ? 'turn_on' : 'turn_off'
+  } as const;
+}
+
+async function requestHomeAssistantService(entityId: string, nextIsOn: boolean) {
+  const request = getServiceRequest(entityId, nextIsOn);
+  const payload = { entityId, domain: request.domain, service: request.service };
+
+  console.info('[HA] Toggle requested', { entityId, nextIsOn });
+  console.info('[HA] entity selected', { entityId });
+  console.info('[HA] service domain', request.domain);
+  console.info('[HA] service name', request.service);
+  console.info('[HA] service payload', payload);
+
+  const response = await fetch(`/api/home-assistant/${request.endpoint}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+  const responsePayload = (await response.json()) as HomeAssistantServiceResponse;
+  console.info('[HA] service response', { status: response.status, payload: responsePayload });
+  if (!response.ok || responsePayload.success === false) {
+    throw new Error(responsePayload.error ?? `Home Assistant ${request.service} failed with ${response.status}`);
+  }
+
+  console.info('[HA] Toggle success', { entityId, payload: responsePayload });
 }
 
 export class HomeAssistantProvider implements ControlProvider {
   readonly name = 'HomeAssistantProvider';
-  private readonly fallback = new CloudProvider();
 
   async getDevices() {
+    validateHomeAssistantMappings();
     console.info('[HA] Loading states');
     const cachedStates = readStates();
 
@@ -55,6 +144,7 @@ export class HomeAssistantProvider implements ControlProvider {
       }
 
       const homeAssistantStates = (await response.json()) as HomeAssistantState[];
+      const homeAssistantEntities = normalizeHomeAssistantEntities(homeAssistantStates);
       const next = { ...cachedStates };
 
       for (const [deviceId, mapping] of Object.entries(homeAssistantDeviceMappings)) {
@@ -62,15 +152,19 @@ export class HomeAssistantProvider implements ControlProvider {
           continue;
         }
 
-        const state = homeAssistantStates.find((item) => item.entity_id === mapping.entityId);
-        if (!state) {
+        if (!isValidControllableEntity(mapping.entityId)) {
+          next[deviceId as DeviceId] = { ...next[deviceId as DeviceId], isOn: false, isAvailable: false };
           continue;
         }
 
-        next[deviceId as DeviceId] = {
-          ...next[deviceId as DeviceId],
-          isOn: state.state === 'on'
-        };
+        next[deviceId as DeviceId] = { ...next[deviceId as DeviceId], isOn: false, isAvailable: false };
+        const state = homeAssistantStates.find((item) => item.entity_id === mapping.entityId);
+        if (!state) {
+          console.error('[HA] mapped entity missing', { deviceId, entityId: mapping.entityId });
+          continue;
+        }
+
+        next[deviceId as DeviceId] = { ...next[deviceId as DeviceId], ...getIsOnFromState(state) };
         console.info('[HomeAssistantProvider] device synced', {
           deviceId,
           entityId: mapping.entityId,
@@ -80,12 +174,12 @@ export class HomeAssistantProvider implements ControlProvider {
 
       writeStates(next);
       console.info('[HA] States loaded');
-      return { devices, states: next, localSystemOnline: true, localSystemError: null };
+      return { devices, states: next, localSystemOnline: true, localSystemError: null, homeAssistantEntities };
     } catch (error) {
-      console.error('[HA] States failed, falling back to Tuya', { error });
-      const fallbackResult = await this.fallback.getDevices();
+      console.error('[HA] States failed', { error });
       return {
-        ...fallbackResult,
+        devices,
+        states: getUnavailableStates(cachedStates),
         localSystemOnline: false,
         localSystemError: error instanceof Error ? error.message : 'Home Assistant states unavailable'
       };
@@ -97,19 +191,22 @@ export class HomeAssistantProvider implements ControlProvider {
     const nextIsOn = Boolean(state.isOn);
 
     if (!mapping) {
-      console.error('[HA] Toggle failed, falling back to Tuya', { deviceId, error: 'Missing Home Assistant mapping' });
-      return this.fallback.setDeviceState(deviceId, state);
+      console.error('[HA] Toggle failed', { deviceId, error: 'Missing Home Assistant mapping' });
+      throw new Error(`Missing Home Assistant mapping for ${deviceId}`);
+    }
+
+    if (!isValidControllableEntity(mapping.entityId)) {
+      console.error('[HA] Toggle failed', { deviceId, entityId: mapping.entityId, error: 'Invalid Home Assistant entity domain' });
+      throw new Error(`Invalid Home Assistant mapping for ${deviceId}`);
     }
 
     try {
-      await requestHomeAssistantService(nextIsOn ? 'turn-on' : 'turn-off', mapping.entityId);
-      const states = readStates();
-      states[deviceId] = { ...states[deviceId], ...state, isOn: nextIsOn };
-      writeStates(states);
-      return states[deviceId];
+      await requestHomeAssistantService(mapping.entityId, nextIsOn);
+      const refreshed = await this.getDevices();
+      return refreshed.states[deviceId];
     } catch (error) {
-      console.error('[HA] Toggle failed, falling back to Tuya', { deviceId, error });
-      return this.fallback.setDeviceState(deviceId, state);
+      console.error('[HA] Toggle failed', { deviceId, error });
+      throw error;
     }
   }
 
@@ -123,16 +220,19 @@ export class HomeAssistantProvider implements ControlProvider {
         continue;
       }
 
+      if (!isValidControllableEntity(mapping.entityId)) {
+        console.error('[HA] turnOffAll skipped invalid mapping', { deviceId: device.id, entityId: mapping.entityId });
+        continue;
+      }
+
       try {
-        await requestHomeAssistantService('turn-off', mapping.entityId);
+        await requestHomeAssistantService(mapping.entityId, false);
         next[device.id] = { ...next[device.id], isOn: false };
       } catch (error) {
         console.error('[HomeAssistantProvider] turnOffAll failed for device', { deviceId: device.id, error });
       }
     }
-
-    const fallbackStates = await this.fallback.turnOffAll();
-    writeStates({ ...fallbackStates, ...next });
-    return { ...fallbackStates, ...next };
+    writeStates(next);
+    return next;
   }
 }
