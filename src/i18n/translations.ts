@@ -72,7 +72,12 @@ export const translations = {
       haRecommended: 'מומלץ',
       haDeviceClass: 'סוג מכשיר',
       haEntityCategory: 'קטגוריה',
-      copy: 'העתק'
+      copy: 'העתק',
+      fanSpeed: 'עוצמת מאוורר',
+      heaterMode: 'מצב חימום',
+      heaterOn: 'הפעל',
+      heaterOff: 'כבה',
+      heaterHeat: 'חימום'
     },
     home: {
       title: 'Royal Water Villa',
@@ -218,7 +223,12 @@ export const translations = {
       haRecommended: 'Recommended',
       haDeviceClass: 'Device class',
       haEntityCategory: 'Category',
-      copy: 'Copy'
+      copy: 'Copy',
+      fanSpeed: 'Fan speed',
+      heaterMode: 'Heating mode',
+      heaterOn: 'Turn on',
+      heaterOff: 'Turn off',
+      heaterHeat: 'Heat'
     },
     home: {
       title: 'Royal Water Villa',
@@ -364,7 +374,12 @@ export const translations = {
       haRecommended: 'Recommandée',
       haDeviceClass: 'Type appareil',
       haEntityCategory: 'Catégorie',
-      copy: 'Copier'
+      copy: 'Copier',
+      fanSpeed: 'Vitesse du ventilateur',
+      heaterMode: 'Mode chauffage',
+      heaterOn: 'Allumer',
+      heaterOff: 'Éteindre',
+      heaterHeat: 'Chauffer'
     },
     home: {
       title: 'Royal Water Villa',

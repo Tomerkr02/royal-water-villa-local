@@ -115,6 +115,13 @@ function getIsOnFromState(state: HomeAssistantState) {
   if (state.state === 'unavailable' || state.state === 'unknown') {
     return { isOn: false, isAvailable: false };
   }
+  if (domain === 'fan') {
+    const percentage = typeof state.attributes?.percentage === 'number' ? state.attributes.percentage : 0;
+    return { isOn: state.state === 'on', isAvailable: true, percentage };
+  }
+  if (domain === 'climate') {
+    return { isOn: state.state !== 'off', isAvailable: true, hvacMode: state.state };
+  }
   if (domain === 'cover') {
     return { isOn: state.state === 'open' || state.state === 'opening', isAvailable: true };
   }
@@ -159,9 +166,9 @@ function getServiceRequest(entityId: string, nextIsOn: boolean) {
   } as const;
 }
 
-async function requestHomeAssistantService(entityId: string, nextIsOn: boolean) {
+async function requestHomeAssistantService(entityId: string, nextIsOn: boolean, serviceData?: Record<string, unknown>) {
   const request = getServiceRequest(entityId, nextIsOn);
-  const payload = { entityId, domain: request.domain, service: request.service };
+  const payload = { entityId, domain: request.domain, service: request.service, serviceData };
 
   console.info('[HA] Toggle requested', { entityId, nextIsOn });
   console.info('[HA] entity selected', { entityId });
@@ -182,6 +189,33 @@ async function requestHomeAssistantService(entityId: string, nextIsOn: boolean) 
   }
 
   console.info('[HA] Toggle success', { entityId, payload: responsePayload });
+}
+
+async function requestHomeAssistantCustomService(
+  endpoint: 'turn-on' | 'turn-off' | 'toggle',
+  entityId: string,
+  domain: string,
+  service: string,
+  serviceData?: Record<string, unknown>
+) {
+  const payload = { entityId, domain, service, serviceData };
+
+  console.info('[HA] entity selected', { entityId });
+  console.info('[HA] service domain', domain);
+  console.info('[HA] service name', service);
+  console.info('[HA] service payload', payload);
+
+  const response = await fetch(`/api/home-assistant/${endpoint}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+  const responsePayload = (await response.json()) as HomeAssistantServiceResponse;
+  console.info('[HA] service response', { status: response.status, payload: responsePayload });
+  if (!response.ok || responsePayload.success === false) {
+    throw new Error(responsePayload.error ?? `Home Assistant ${service} failed with ${response.status}`);
+  }
 }
 
 export class HomeAssistantProvider implements ControlProvider {
@@ -262,6 +296,69 @@ export class HomeAssistantProvider implements ControlProvider {
       return refreshed.states[deviceId];
     } catch (error) {
       console.error('[HA] Toggle failed', { deviceId, error });
+      throw error;
+    }
+  }
+
+  async setFanPercentage(deviceId: DeviceId, percentage: number) {
+    const mapping = homeAssistantDeviceMappings[deviceId];
+    const safePercentage = Math.max(0, Math.min(100, Math.round(percentage)));
+
+    if (!mapping || getDomain(mapping.entityId) !== 'fan') {
+      console.error('[HA] fan percentage failed', { deviceId, error: 'Missing fan mapping' });
+      throw new Error(`Missing fan Home Assistant mapping for ${deviceId}`);
+    }
+
+    try {
+      if (safePercentage === 0) {
+        await requestHomeAssistantCustomService('turn-off', mapping.entityId, 'fan', 'turn_off');
+      } else {
+        await requestHomeAssistantCustomService('turn-on', mapping.entityId, 'fan', 'set_percentage', {
+          percentage: safePercentage
+        });
+      }
+      const refreshed = await this.getDevices();
+      return refreshed.states[deviceId];
+    } catch (error) {
+      console.error('[HA] fan percentage failed', { deviceId, percentage: safePercentage, error });
+      throw error;
+    }
+  }
+
+  async setClimatePower(deviceId: DeviceId, isOn: boolean) {
+    const mapping = homeAssistantDeviceMappings[deviceId];
+
+    if (!mapping || getDomain(mapping.entityId) !== 'climate') {
+      console.error('[HA] climate power failed', { deviceId, error: 'Missing climate mapping' });
+      throw new Error(`Missing climate Home Assistant mapping for ${deviceId}`);
+    }
+
+    try {
+      await requestHomeAssistantCustomService(isOn ? 'turn-on' : 'turn-off', mapping.entityId, 'climate', isOn ? 'turn_on' : 'turn_off');
+      const refreshed = await this.getDevices();
+      return refreshed.states[deviceId];
+    } catch (error) {
+      console.error('[HA] climate power failed', { deviceId, isOn, error });
+      throw error;
+    }
+  }
+
+  async setClimateHvacMode(deviceId: DeviceId, hvacMode: string) {
+    const mapping = homeAssistantDeviceMappings[deviceId];
+
+    if (!mapping || getDomain(mapping.entityId) !== 'climate') {
+      console.error('[HA] climate mode failed', { deviceId, error: 'Missing climate mapping' });
+      throw new Error(`Missing climate Home Assistant mapping for ${deviceId}`);
+    }
+
+    try {
+      await requestHomeAssistantCustomService('turn-on', mapping.entityId, 'climate', 'set_hvac_mode', {
+        hvac_mode: hvacMode
+      });
+      const refreshed = await this.getDevices();
+      return refreshed.states[deviceId];
+    } catch (error) {
+      console.error('[HA] climate mode failed', { deviceId, hvacMode, error });
       throw error;
     }
   }

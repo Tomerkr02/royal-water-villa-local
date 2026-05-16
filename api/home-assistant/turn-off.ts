@@ -8,7 +8,12 @@ export default async function handler(request: VercelRequest, response: VercelRe
   }
 
   try {
-    const { entityId, domain, service } = request.body as { entityId?: string; domain?: string; service?: string };
+    const { entityId, domain, service, serviceData } = request.body as {
+      entityId?: string;
+      domain?: string;
+      service?: string;
+      serviceData?: Record<string, unknown>;
+    };
     if (!entityId || !domain) {
       response.status(400).json({ success: false, error: 'Missing entityId or domain' });
       return;
@@ -16,7 +21,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
 
     const upstream = await requestHomeAssistant(`/api/services/${domain}/${service ?? 'turn_off'}`, {
       method: 'POST',
-      body: JSON.stringify({ entity_id: entityId })
+      body: JSON.stringify({ entity_id: entityId, ...(serviceData ?? {}) })
     });
     response.status(upstream.status).json(await readJsonResponse(upstream));
   } catch (error) {

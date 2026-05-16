@@ -20,6 +20,9 @@ interface ControlStore {
   loadDevices: () => Promise<void>;
   syncDevices: () => Promise<void>;
   setDeviceState: (deviceId: DeviceId, isOn: boolean) => Promise<void>;
+  setFanPercentage: (deviceId: DeviceId, percentage: number) => Promise<void>;
+  setClimatePower: (deviceId: DeviceId, isOn: boolean) => Promise<void>;
+  setClimateHvacMode: (deviceId: DeviceId, hvacMode: string) => Promise<void>;
   turnOffAll: () => Promise<void>;
   setOffline: (isOffline: boolean) => void;
 }
@@ -114,6 +117,75 @@ export const useControlStore = create<ControlStore>((set, get) => ({
       set({
         controlError: 'command-failed',
         localSystemError: error instanceof Error ? error.message : 'Home Assistant command failed'
+      });
+    }
+  },
+
+  async setFanPercentage(deviceId, percentage) {
+    if (get().isOffline) {
+      set({ controlError: 'offline' });
+      return;
+    }
+
+    try {
+      const updated = await controlService.setFanPercentage(deviceId, percentage);
+      const states = get().states;
+      if (states) {
+        set({ states: { ...states, [deviceId]: updated } });
+      }
+      await get().syncDevices();
+      set({ controlError: null });
+    } catch (error) {
+      console.error('[ControlStore] fan percentage failed', { deviceId, percentage, error });
+      set({
+        controlError: 'command-failed',
+        localSystemError: error instanceof Error ? error.message : 'Home Assistant fan command failed'
+      });
+    }
+  },
+
+  async setClimatePower(deviceId, isOn) {
+    if (get().isOffline) {
+      set({ controlError: 'offline' });
+      return;
+    }
+
+    try {
+      const updated = await controlService.setClimatePower(deviceId, isOn);
+      const states = get().states;
+      if (states) {
+        set({ states: { ...states, [deviceId]: updated } });
+      }
+      await get().syncDevices();
+      set({ controlError: null });
+    } catch (error) {
+      console.error('[ControlStore] climate power failed', { deviceId, isOn, error });
+      set({
+        controlError: 'command-failed',
+        localSystemError: error instanceof Error ? error.message : 'Home Assistant climate command failed'
+      });
+    }
+  },
+
+  async setClimateHvacMode(deviceId, hvacMode) {
+    if (get().isOffline) {
+      set({ controlError: 'offline' });
+      return;
+    }
+
+    try {
+      const updated = await controlService.setClimateHvacMode(deviceId, hvacMode);
+      const states = get().states;
+      if (states) {
+        set({ states: { ...states, [deviceId]: updated } });
+      }
+      await get().syncDevices();
+      set({ controlError: null });
+    } catch (error) {
+      console.error('[ControlStore] climate mode failed', { deviceId, hvacMode, error });
+      set({
+        controlError: 'command-failed',
+        localSystemError: error instanceof Error ? error.message : 'Home Assistant climate mode command failed'
       });
     }
   },

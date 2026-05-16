@@ -5,7 +5,7 @@ export type DeviceArea =
   | 'bathroom'
   | 'bedroom';
 
-export type DeviceKind = 'switch' | 'fan';
+export type DeviceKind = 'switch' | 'fan' | 'climate';
 
 export type DeviceId =
   | 'wallLight'
@@ -21,7 +21,7 @@ export type DeviceId =
   | 'ceilingFanLight'
   | 'bathroomHeater';
 
-export type DeviceCapability = 'onOff' | 'speed';
+export type DeviceCapability = 'onOff' | 'speed' | 'hvacMode';
 
 export interface BaseDevice {
   id: DeviceId;
@@ -43,12 +43,20 @@ export interface FanDevice extends BaseDevice {
   supportedSpeeds: readonly [1, 2, 3];
 }
 
-export type Device = SwitchDevice | FanDevice;
+export interface ClimateDevice extends BaseDevice {
+  id: 'bathroomHeater';
+  kind: 'climate';
+  capabilities: ['onOff', 'hvacMode'];
+}
+
+export type Device = SwitchDevice | FanDevice | ClimateDevice;
 
 export interface DeviceState {
   isOn: boolean;
   isAvailable?: boolean;
   speed?: 1 | 2 | 3;
+  percentage?: number;
+  hvacMode?: string;
 }
 
 export type DeviceStateMap = Record<DeviceId, DeviceState>;

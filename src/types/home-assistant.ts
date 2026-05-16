@@ -5,6 +5,8 @@ export interface HomeAssistantState {
     device_class?: string;
     entity_category?: string;
     friendly_name?: string;
+    hvac_modes?: string[];
+    percentage?: number;
     [key: string]: unknown;
   };
   last_changed?: string;

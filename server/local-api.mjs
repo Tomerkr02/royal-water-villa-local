@@ -118,7 +118,7 @@ createServer(async (request, response) => {
       const service = typeof body.service === 'string' ? body.service : defaultService;
       const upstream = await requestHomeAssistant(`/api/services/${domain}/${service}`, {
         method: 'POST',
-        body: JSON.stringify({ entity_id: entityId })
+        body: JSON.stringify({ entity_id: entityId, ...(body.serviceData ?? {}) })
       });
       await sendUpstream(response, upstream);
       return;

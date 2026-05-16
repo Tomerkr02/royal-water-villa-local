@@ -195,6 +195,70 @@ span {
   opacity: 0.5;
 }
 
+.advanced-control {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 18px;
+}
+
+.luxury-slider {
+  width: 100%;
+  accent-color: #d7b46a;
+  cursor: pointer;
+}
+
+.luxury-slider:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.luxury-slider::-webkit-slider-runnable-track {
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(215, 180, 106, 0.52), rgba(255, 255, 255, 0.12));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.luxury-slider::-webkit-slider-thumb {
+  width: 26px;
+  height: 26px;
+  margin-top: -8px;
+  border: 2px solid rgba(255, 227, 164, 0.9);
+  border-radius: 999px;
+  background: #d7b46a;
+  box-shadow: 0 0 24px rgba(215, 180, 106, 0.32);
+  appearance: none;
+}
+
+.heater-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.heater-actions button {
+  min-height: 48px;
+  border-radius: 16px;
+  border: 1px solid rgba(215, 180, 106, 0.2);
+  background: rgba(215, 180, 106, 0.1);
+  color: #f5efe1;
+  font-weight: 700;
+  transition:
+    border-color 180ms ease,
+    background 180ms ease,
+    color 180ms ease;
+}
+
+.heater-actions button:hover {
+  border-color: rgba(215, 180, 106, 0.42);
+  background: rgba(215, 180, 106, 0.18);
+  color: #f5d991;
+}
+
+.heater-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 .nav-button,
 .icon-button {
   position: relative;

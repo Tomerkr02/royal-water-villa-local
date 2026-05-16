@@ -195,6 +195,7 @@ function DeviceTile({ device }: { device: Device }) {
   const isOn = states?.[device.id]?.isOn ?? false;
   const isAvailable = states?.[device.id]?.isAvailable ?? true;
   const Icon = areaIcons[device.area];
+  const statusLabel = !isAvailable ? t.common.unavailable : isOn ? t.common.deviceOn : t.common.deviceOff;
 
   return (
     <motion.div
@@ -213,18 +214,98 @@ function DeviceTile({ device }: { device: Device }) {
             <h3 className="text-2xl font-semibold text-villa-pearl">{t.devices[device.id]}</h3>
             <p className="mt-1 text-base text-villa-mist">{t.areas[device.area]}</p>
             <span className={`mt-4 inline-flex rounded-full px-3 py-1 text-sm font-bold ${isOn ? 'status-on' : 'status-off'}`}>
-              {!isAvailable ? t.common.unavailable : isOn ? t.common.deviceOn : t.common.deviceOff}
+              {statusLabel}
             </span>
           </div>
         </div>
-        <ToggleSwitch
-          isOn={isOn}
-          disabled={!isAvailable}
-          label={`${isOn ? t.lighting.turnOff : t.lighting.turnOn} ${t.devices[device.id]}`}
-          onToggle={() => void setDeviceState(device.id, !isOn)}
-        />
+        {device.kind === 'switch' ? (
+          <ToggleSwitch
+            isOn={isOn}
+            disabled={!isAvailable}
+            label={`${isOn ? t.lighting.turnOff : t.lighting.turnOn} ${t.devices[device.id]}`}
+            onToggle={() => void setDeviceState(device.id, !isOn)}
+          />
+        ) : null}
       </div>
+      {device.kind === 'fan' ? <FanControls deviceId={device.id} /> : null}
+      {device.kind === 'climate' ? <ClimateControls deviceId={device.id} /> : null}
     </motion.div>
+  );
+}
+
+function FanControls({ deviceId }: { deviceId: DeviceId }) {
+  const { t } = useI18n();
+  const state = useControlStore((store) => store.states?.[deviceId]);
+  const setFanPercentage = useControlStore((store) => store.setFanPercentage);
+  const [draftPercentage, setDraftPercentage] = useState<number | null>(null);
+  const percentage = state?.percentage ?? 0;
+  const sliderValue = draftPercentage ?? percentage;
+  const isAvailable = state?.isAvailable ?? true;
+
+  const commitPercentage = () => {
+    if (!isAvailable || draftPercentage === null || draftPercentage === percentage) {
+      setDraftPercentage(null);
+      return;
+    }
+    const next = draftPercentage;
+    setDraftPercentage(null);
+    void setFanPercentage(deviceId, next);
+  };
+
+  return (
+    <div className="advanced-control mt-6">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <span className="text-sm font-bold text-villa-gold">{t.common.fanSpeed}</span>
+        <span className="quiet-pill">{percentage}%</span>
+      </div>
+      <input
+        className="luxury-slider"
+        type="range"
+        min="0"
+        max="100"
+        step="5"
+        value={sliderValue}
+        disabled={!isAvailable}
+        aria-label={t.common.fanSpeed}
+        onChange={(event) => setDraftPercentage(Number(event.target.value))}
+        onMouseUp={commitPercentage}
+        onTouchEnd={commitPercentage}
+        onKeyUp={commitPercentage}
+      />
+      <div className="mt-2 flex justify-between text-xs text-villa-mist">
+        <span>0%</span>
+        <span>100%</span>
+      </div>
+    </div>
+  );
+}
+
+function ClimateControls({ deviceId }: { deviceId: DeviceId }) {
+  const { t } = useI18n();
+  const state = useControlStore((store) => store.states?.[deviceId]);
+  const setClimatePower = useControlStore((store) => store.setClimatePower);
+  const setClimateHvacMode = useControlStore((store) => store.setClimateHvacMode);
+  const isAvailable = state?.isAvailable ?? true;
+  const hvacMode = state?.hvacMode ?? 'off';
+
+  return (
+    <div className="advanced-control mt-6">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <span className="text-sm font-bold text-villa-gold">{t.common.heaterMode}</span>
+        <span className="quiet-pill">{hvacMode}</span>
+      </div>
+      <div className="heater-actions">
+        <button type="button" disabled={!isAvailable} onClick={() => void setClimatePower(deviceId, true)}>
+          {t.common.heaterOn}
+        </button>
+        <button type="button" disabled={!isAvailable} onClick={() => void setClimateHvacMode(deviceId, 'heat')}>
+          {t.common.heaterHeat}
+        </button>
+        <button type="button" disabled={!isAvailable} onClick={() => void setClimatePower(deviceId, false)}>
+          {t.common.heaterOff}
+        </button>
+      </div>
+    </div>
   );
 }
 

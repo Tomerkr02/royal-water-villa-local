@@ -27,11 +27,16 @@ export const devices: Device[] = [
     supportedSpeeds: [1, 2, 3]
   },
   { id: 'ceilingFanLight', name: 'תאורת מאוורר / חדר שינה', area: 'bedroom', kind: 'switch', capabilities: ['onOff'] },
-  { id: 'bathroomHeater', name: 'תנור חימום מקלחת', area: 'bathroom', kind: 'switch', capabilities: ['onOff'] }
+  { id: 'bathroomHeater', name: 'תנור חימום מקלחת', area: 'bathroom', kind: 'climate', capabilities: ['onOff', 'hvacMode'] }
 ];
 
 export const defaultDeviceStates: DeviceStateMap = devices.reduce((states, device) => {
-  states[device.id] = device.id === 'ceilingFan' ? { isOn: false, speed: 1 } : { isOn: false };
+  states[device.id] =
+    device.id === 'ceilingFan'
+      ? { isOn: false, speed: 1, percentage: 0 }
+      : device.id === 'bathroomHeater'
+        ? { isOn: false, hvacMode: 'off' }
+        : { isOn: false };
   return states;
 }, {} as DeviceStateMap);
 

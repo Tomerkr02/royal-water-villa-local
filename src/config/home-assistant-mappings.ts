@@ -32,8 +32,14 @@ export const homeAssistantDeviceMappings: Partial<Record<DeviceId, HomeAssistant
   bathroomLight: {
     entityId: 'switch.tvrt_mbtyh_vld_qyr_khvts_shower_outside_wall_switch_2'
   },
+  ceilingFan: {
+    entityId: 'fan.ceiling_fan_with_light'
+  },
   ceilingFanLight: {
     entityId: 'light.ceiling_fan_with_light'
+  },
+  bathroomHeater: {
+    entityId: 'climate.royal_heater'
   }
 };
 

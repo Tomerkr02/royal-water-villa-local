@@ -11,5 +11,8 @@ export interface ControlProvider {
     homeAssistantEntities?: HomeAssistantDebugEntity[];
   }>;
   setDeviceState(deviceId: DeviceId, state: Partial<DeviceState>): Promise<DeviceState>;
+  setFanPercentage?(deviceId: DeviceId, percentage: number): Promise<DeviceState>;
+  setClimatePower?(deviceId: DeviceId, isOn: boolean): Promise<DeviceState>;
+  setClimateHvacMode?(deviceId: DeviceId, hvacMode: string): Promise<DeviceState>;
   turnOffAll(): Promise<DeviceStateMap>;
 }
