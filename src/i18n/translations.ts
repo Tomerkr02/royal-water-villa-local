@@ -60,7 +60,19 @@ export const translations = {
       turnOffAction: 'כיבוי',
       unavailable: 'לא זמין',
       haEntities: 'ישויות Home Assistant',
-      haRelevantOnly: 'רלוונטיות לשליטה מודגשות'
+      haRelevantOnly: 'כל הישויות מוצגות לפי דומיין. ישויות שליטה מומלצות מודגשות.',
+      haRawCount: 'סך ישויות',
+      haControllableCount: 'ניתנות לשליטה',
+      haDiagnosticsCount: 'דיאגנוסטיקה',
+      haFilterAll: 'הכל',
+      haFilterControllable: 'שליטה',
+      haFilterDiagnostics: 'דיאגנוסטיקה',
+      haSearchPlaceholder: 'חיפוש לפי entity_id, שם או מצב',
+      haMapped: 'ממופה',
+      haRecommended: 'מומלץ',
+      haDeviceClass: 'סוג מכשיר',
+      haEntityCategory: 'קטגוריה',
+      copy: 'העתק'
     },
     home: {
       title: 'Royal Water Villa',
@@ -194,7 +206,19 @@ export const translations = {
       turnOffAction: 'Turn off',
       unavailable: 'Unavailable',
       haEntities: 'Home Assistant entities',
-      haRelevantOnly: 'Control-relevant entities are highlighted'
+      haRelevantOnly: 'All entities are shown by domain. Recommended control entities are highlighted.',
+      haRawCount: 'Raw entities',
+      haControllableCount: 'Controllable',
+      haDiagnosticsCount: 'Diagnostics',
+      haFilterAll: 'All',
+      haFilterControllable: 'Controllable',
+      haFilterDiagnostics: 'Diagnostics',
+      haSearchPlaceholder: 'Search entity_id, name or state',
+      haMapped: 'Mapped',
+      haRecommended: 'Recommended',
+      haDeviceClass: 'Device class',
+      haEntityCategory: 'Category',
+      copy: 'Copy'
     },
     home: {
       title: 'Royal Water Villa',
@@ -328,7 +352,19 @@ export const translations = {
       turnOffAction: 'Éteindre',
       unavailable: 'Indisponible',
       haEntities: 'Entités Home Assistant',
-      haRelevantOnly: 'Les entités utiles au contrôle sont mises en évidence'
+      haRelevantOnly: 'Toutes les entités sont affichées par domaine. Les commandes recommandées sont mises en évidence.',
+      haRawCount: 'Entités brutes',
+      haControllableCount: 'Contrôlables',
+      haDiagnosticsCount: 'Diagnostics',
+      haFilterAll: 'Tout',
+      haFilterControllable: 'Contrôlables',
+      haFilterDiagnostics: 'Diagnostics',
+      haSearchPlaceholder: 'Rechercher entity_id, nom ou état',
+      haMapped: 'Mappée',
+      haRecommended: 'Recommandée',
+      haDeviceClass: 'Type appareil',
+      haEntityCategory: 'Catégorie',
+      copy: 'Copier'
     },
     home: {
       title: 'Royal Water Villa',

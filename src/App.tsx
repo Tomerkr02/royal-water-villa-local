@@ -7,6 +7,7 @@ import {
   CalendarClock,
   Check,
   ChevronDown,
+  Copy,
   Flame,
   Home,
   Info,
@@ -17,6 +18,7 @@ import {
   Plus,
   Power,
   RefreshCw,
+  Search,
   Sparkles,
   Sun,
   Waves,
@@ -38,6 +40,7 @@ import type { Device, DeviceArea, DeviceId } from './types/device';
 import type { ShabbatDeviceSchedule } from './types/shabbat';
 
 type Screen = 'home' | 'lighting' | 'scenes' | 'shabbat' | 'guest';
+type DeveloperEntityFilter = 'all' | 'controllable' | 'diagnostics';
 
 const navItems: Array<{ id: Screen; icon: typeof Home }> = [
   { id: 'home', icon: Home },
@@ -227,8 +230,52 @@ function DeviceTile({ device }: { device: Device }) {
 
 function HomeAssistantDebugPanel() {
   const { t } = useI18n();
+  const [filter, setFilter] = useState<DeveloperEntityFilter>('all');
+  const [searchText, setSearchText] = useState('');
   const entities = useControlStore((state) => state.homeAssistantEntities);
-  const relevantDomains = new Set(['light', 'switch', 'cover', 'fan', 'climate']);
+  const syncDevices = useControlStore((state) => state.syncDevices);
+  const isSyncing = useControlStore((state) => state.isSyncing);
+  const normalizedSearch = searchText.trim().toLowerCase();
+  const filters: Array<{ id: DeveloperEntityFilter; label: string }> = [
+    { id: 'all', label: t.common.haFilterAll },
+    { id: 'controllable', label: t.common.haFilterControllable },
+    { id: 'diagnostics', label: t.common.haFilterDiagnostics }
+  ];
+  const visibleEntities = entities.filter((entity) => {
+    const matchesFilter =
+      filter === 'all' ||
+      (filter === 'controllable' && entity.isControllable) ||
+      (filter === 'diagnostics' && entity.isDiagnostic);
+    const matchesSearch =
+      !normalizedSearch ||
+      entity.entityId.toLowerCase().includes(normalizedSearch) ||
+      entity.friendlyName.toLowerCase().includes(normalizedSearch) ||
+      entity.domain.toLowerCase().includes(normalizedSearch) ||
+      entity.state.toLowerCase().includes(normalizedSearch);
+    return matchesFilter && matchesSearch;
+  });
+  const groupedEntities = visibleEntities.reduce<Record<string, typeof visibleEntities>>((groups, entity) => {
+    groups[entity.domain] = [...(groups[entity.domain] ?? []), entity];
+    return groups;
+  }, {});
+  const domainOrder = Object.keys(groupedEntities).sort((a, b) => {
+    const priority = ['switch', 'light', 'cover', 'fan', 'climate', 'select', 'sensor'];
+    const aIndex = priority.indexOf(a);
+    const bIndex = priority.indexOf(b);
+    if (aIndex !== -1 || bIndex !== -1) {
+      return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
+    }
+    return a.localeCompare(b);
+  });
+  const controllableCount = entities.filter((entity) => entity.isControllable).length;
+  const diagnosticsCount = entities.filter((entity) => entity.isDiagnostic).length;
+  const copyEntityId = (entityId: string) => {
+    if (!navigator.clipboard) {
+      console.info('[HA] copy unavailable', { entityId });
+      return;
+    }
+    void navigator.clipboard.writeText(entityId);
+  };
 
   return (
     <div className="glass-panel ha-entities-panel">
@@ -237,26 +284,93 @@ function HomeAssistantDebugPanel() {
           <h3 className="text-2xl font-semibold text-villa-pearl">{t.common.haEntities}</h3>
           <p className="mt-1 text-sm text-villa-mist">{t.common.haRelevantOnly}</p>
         </div>
-        <span className="quiet-pill">{entities.length}</span>
+        <div className="flex flex-wrap justify-end gap-2">
+          <span className="quiet-pill">
+            {t.common.haRawCount}: {entities.length}
+          </span>
+          <span className="active-pill">
+            {t.common.haControllableCount}: {controllableCount}
+          </span>
+          <span className="quiet-pill">
+            {t.common.haDiagnosticsCount}: {diagnosticsCount}
+          </span>
+          <button
+            type="button"
+            className="refresh-button"
+            onClick={() => void syncDevices()}
+            disabled={isSyncing}
+          >
+            <RefreshCw size={18} className={isSyncing ? 'animate-spin' : ''} />
+            <span>{t.common.refresh}</span>
+          </button>
+        </div>
+      </div>
+      <div className="ha-tools mb-4">
+        <div className="ha-search">
+          <Search size={18} />
+          <input
+            type="search"
+            value={searchText}
+            onChange={(event) => setSearchText(event.target.value)}
+            placeholder={t.common.haSearchPlaceholder}
+          />
+        </div>
+        <div className="ha-filter-tabs">
+          {filters.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className={`ha-filter-tab ${filter === item.id ? 'ha-filter-tab-active' : ''}`}
+              onClick={() => setFilter(item.id)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
       </div>
       <div className="ha-entities-list">
-        {entities.map((entity) => {
-          const isRelevant = relevantDomains.has(entity.domain);
-          return (
-            <div key={entity.entityId} className={`ha-entity-row ${isRelevant ? 'ha-entity-relevant' : ''}`}>
-              <div className="min-w-0">
-                <p className="truncate font-semibold text-villa-pearl">{entity.entityId}</p>
-                <p className="truncate text-sm text-villa-mist">{entity.friendlyName}</p>
-              </div>
-              <div className="flex flex-wrap justify-end gap-2 text-xs font-bold">
-                <span className="ha-entity-chip">{entity.domain}</span>
-                <span className={entity.state === 'on' || entity.state === 'open' ? 'status-on rounded-full px-3 py-1' : 'status-off rounded-full px-3 py-1'}>
-                  {entity.state}
-                </span>
-              </div>
+        {domainOrder.map((domain) => (
+          <section key={domain} className="ha-domain-group">
+            <div className="ha-domain-heading">
+              <h4>{domain}</h4>
+              <span className="quiet-pill">{groupedEntities[domain].length}</span>
             </div>
-          );
-        })}
+            <div className="grid gap-2">
+              {groupedEntities[domain].map((entity) => (
+                <div
+                  key={entity.entityId}
+                  className={`ha-entity-row ${entity.isControllable ? 'ha-entity-relevant' : ''} ${entity.isMapped ? 'ha-entity-mapped' : ''}`}
+                >
+                  <div className="min-w-0">
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                      <p className="truncate font-semibold text-villa-pearl">{entity.entityId}</p>
+                      {entity.isMapped ? <span className="active-pill">{t.common.haMapped}</span> : null}
+                      {entity.isControllable ? <span className="ha-entity-chip">{t.common.haRecommended}</span> : null}
+                    </div>
+                    <p className="truncate text-sm text-villa-mist">{entity.friendlyName}</p>
+                    {entity.deviceClass || entity.entityCategory ? (
+                      <p className="mt-1 truncate text-xs text-villa-mist">
+                        {entity.deviceClass ? `${t.common.haDeviceClass}: ${entity.deviceClass}` : ''}
+                        {entity.deviceClass && entity.entityCategory ? ' · ' : ''}
+                        {entity.entityCategory ? `${t.common.haEntityCategory}: ${entity.entityCategory}` : ''}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="flex flex-wrap justify-end gap-2 text-xs font-bold">
+                    <span className="ha-entity-chip">{entity.domain}</span>
+                    <span className={entity.state === 'on' || entity.state === 'open' ? 'status-on rounded-full px-3 py-1' : 'status-off rounded-full px-3 py-1'}>
+                      {entity.state}
+                    </span>
+                    <button type="button" className="ha-copy-button" onClick={() => copyEntityId(entity.entityId)}>
+                      <Copy size={16} />
+                      <span>{t.common.copy}</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        ))}
       </div>
     </div>
   );

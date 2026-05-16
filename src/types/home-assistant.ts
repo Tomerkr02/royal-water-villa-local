@@ -2,6 +2,8 @@ export interface HomeAssistantState {
   entity_id: string;
   state: string;
   attributes?: {
+    device_class?: string;
+    entity_category?: string;
     friendly_name?: string;
     [key: string]: unknown;
   };
@@ -14,6 +16,11 @@ export interface HomeAssistantDebugEntity {
   friendlyName: string;
   domain: string;
   state: string;
+  deviceClass?: string;
+  entityCategory?: string;
+  isControllable: boolean;
+  isDiagnostic: boolean;
+  isMapped: boolean;
 }
 
 export interface HomeAssistantServiceResponse {

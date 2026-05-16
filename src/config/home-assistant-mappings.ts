@@ -6,41 +6,34 @@ export interface HomeAssistantDeviceMapping {
 
 export const homeAssistantDeviceMappings: Partial<Record<DeviceId, HomeAssistantDeviceMapping>> = {
   wallLight: {
-    entityId: 'switch.wall_light'
+    entityId: 'switch.tvrt_khvmh_wall_light_switch_1'
   },
   pergolaLight: {
-    entityId: 'switch.pergola_light'
+    entityId: 'switch.tvrt_prgvlh_pergola_light_switch_1'
   },
   livingRoomLedWall: {
-    entityId: 'light.living_room_led_wall'
+    entityId: 'switch.tvrt_slvn_salon_light_switch_2'
   },
   livingRoomCeilingSpots: {
-    entityId: 'light.living_room_ceiling_spots'
+    entityId: 'switch.tvrt_slvn_salon_light_switch_1'
   },
   barLight: {
-    entityId: 'switch.bar_light'
+    entityId: 'switch.tvrt_brykh_vbr_pool_light_bar_switch_2'
   },
-  // Demo mapping example. Replace these entity_id values with the real villa Home Assistant entities.
   poolLight: {
-    entityId: 'light.pool_light'
+    entityId: 'switch.tvrt_brykh_vbr_pool_light_bar_switch_1'
   },
   rearPathLight: {
-    entityId: 'switch.rear_path_light'
+    entityId: 'switch.tvrt_shbyl_khvry_back_pathway_light_switch_1'
   },
   outdoorWallLight: {
-    entityId: 'switch.outdoor_wall_light'
+    entityId: 'switch.tvrt_mbtyh_vld_qyr_khvts_shower_outside_wall_switch_1'
   },
   bathroomLight: {
-    entityId: 'light.bathroom_light'
-  },
-  ceilingFan: {
-    entityId: 'fan.ceiling_fan'
+    entityId: 'switch.tvrt_mbtyh_vld_qyr_khvts_shower_outside_wall_switch_2'
   },
   ceilingFanLight: {
-    entityId: 'light.ceiling_fan_light'
-  },
-  bathroomHeater: {
-    entityId: 'switch.bathroom_heater'
+    entityId: 'light.ceiling_fan_with_light'
   }
 };
 

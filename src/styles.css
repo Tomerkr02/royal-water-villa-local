@@ -378,16 +378,96 @@ span {
 }
 
 .ha-entities-panel {
-  max-height: 520px;
+  max-height: none;
   overflow: hidden;
+}
+
+.ha-tools {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.ha-search {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.22);
+  padding: 0 14px;
+  color: #f5d991;
+}
+
+.ha-search input {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #f5efe1;
+}
+
+.ha-search input::placeholder {
+  color: #8f9a9d;
+}
+
+.ha-filter-tabs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(9, 8, 7, 0.42);
+  padding: 5px;
+}
+
+.ha-filter-tab {
+  min-height: 38px;
+  border-radius: 999px;
+  padding: 0 14px;
+  color: #9ca4a5;
+  font-weight: 700;
+}
+
+.ha-filter-tab-active {
+  background: rgba(215, 180, 106, 0.18);
+  color: #f5efe1;
 }
 
 .ha-entities-list {
   display: grid;
-  max-height: 410px;
-  gap: 10px;
+  max-height: 62vh;
+  gap: 18px;
   overflow-y: auto;
   padding-inline-end: 4px;
+}
+
+.ha-domain-group {
+  display: grid;
+  gap: 10px;
+}
+
+.ha-domain-heading {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid rgba(215, 180, 106, 0.16);
+  background: rgba(9, 8, 7, 0.78);
+  padding: 10px 2px;
+  backdrop-filter: blur(18px);
+}
+
+.ha-domain-heading h4 {
+  color: #f5d991;
+  font-size: 20px;
+  font-weight: 700;
 }
 
 .ha-entity-row {
@@ -406,12 +486,30 @@ span {
   background: rgba(215, 180, 106, 0.09);
 }
 
+.ha-entity-mapped {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 0 0 1px rgba(135, 148, 111, 0.22);
+}
+
 .ha-entity-chip {
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.08);
   padding: 4px 10px;
   color: #f5efe1;
+}
+
+.ha-copy-button {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(215, 180, 106, 0.2);
+  background: rgba(215, 180, 106, 0.1);
+  padding: 0 10px;
+  color: #f5d991;
 }
 
 .primary-button {
@@ -688,6 +786,21 @@ span {
     flex: 1;
     padding: 12px 14px;
     font-size: 22px;
+  }
+
+  .ha-tools,
+  .ha-entity-row {
+    grid-template-columns: 1fr;
+  }
+
+  .ha-filter-tabs {
+    border-radius: 18px;
+  }
+
+  .ha-filter-tab {
+    flex: 1;
+    padding: 0 10px;
+    font-size: 13px;
   }
 
   h3 {
