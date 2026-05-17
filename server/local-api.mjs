@@ -103,6 +103,19 @@ createServer(async (request, response) => {
       return;
     }
 
+    if (request.method === 'GET' && url.pathname === '/api/home-assistant/state') {
+      const entityId = url.searchParams.get('entity_id');
+      if (!entityId) {
+        response.writeHead(400, { 'Content-Type': 'application/json' });
+        response.end(JSON.stringify({ success: false, error: 'Missing entity_id' }));
+        return;
+      }
+
+      const upstream = await requestHomeAssistant(`/api/states/${encodeURIComponent(entityId)}`);
+      await sendUpstream(response, upstream);
+      return;
+    }
+
     const serviceMatch = url.pathname.match(/^\/api\/home-assistant\/(turn-on|turn-off|toggle)$/);
     if (request.method === 'POST' && serviceMatch) {
       const body = await readBody(request);

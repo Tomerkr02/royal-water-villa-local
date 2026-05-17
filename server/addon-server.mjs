@@ -91,6 +91,19 @@ async function handleHomeAssistantApi(request, response, url) {
     return true;
   }
 
+  if (request.method === 'GET' && url.pathname === '/api/home-assistant/state') {
+    const entityId = url.searchParams.get('entity_id');
+    if (!entityId) {
+      response.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+      response.end(JSON.stringify({ success: false, error: 'Missing entity_id' }));
+      return true;
+    }
+
+    const upstream = await requestHomeAssistant(`/api/states/${encodeURIComponent(entityId)}`);
+    await sendJsonResponse(response, upstream);
+    return true;
+  }
+
   const serviceMatch = url.pathname.match(/^\/api\/home-assistant\/(turn-on|turn-off|toggle)$/);
   if (request.method === 'POST' && serviceMatch) {
     const body = await readBody(request);

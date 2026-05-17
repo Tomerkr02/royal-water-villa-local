@@ -15,6 +15,8 @@ interface ControlStore {
   controlError: string | null;
   localSystemOnline: boolean | null;
   localSystemError: string | null;
+  pendingDeviceIds: Partial<Record<DeviceId, boolean>>;
+  deviceErrorIds: Partial<Record<DeviceId, boolean>>;
   homeAssistantEntities: HomeAssistantDebugEntity[];
   providerName: string;
   loadDevices: () => Promise<void>;
@@ -36,6 +38,8 @@ export const useControlStore = create<ControlStore>((set, get) => ({
   controlError: null,
   localSystemOnline: null,
   localSystemError: null,
+  pendingDeviceIds: {},
+  deviceErrorIds: {},
   homeAssistantEntities: [],
   providerName: controlService.getProviderName(),
 
@@ -88,12 +92,21 @@ export const useControlStore = create<ControlStore>((set, get) => ({
   },
 
   async setDeviceState(deviceId, isOn) {
+    if (get().pendingDeviceIds[deviceId]) {
+      return;
+    }
+
     if (get().isOffline) {
       console.error('[ControlStore] blocked command while offline', { deviceId, isOn });
       useActivityLogStore.getState().addEntry({ deviceId, isOn, success: false });
       set({ controlError: 'offline' });
       return;
     }
+
+    set({
+      pendingDeviceIds: { ...get().pendingDeviceIds, [deviceId]: true },
+      deviceErrorIds: { ...get().deviceErrorIds, [deviceId]: false }
+    });
 
     try {
       let updated;
@@ -108,15 +121,21 @@ export const useControlStore = create<ControlStore>((set, get) => ({
       if (states) {
         set({ states: { ...states, [deviceId]: updated } });
       }
-      await get().syncDevices();
+      void get().syncDevices();
       useActivityLogStore.getState().addEntry({ deviceId, isOn, success: true });
-      set({ controlError: null });
+      set({
+        controlError: null,
+        pendingDeviceIds: { ...get().pendingDeviceIds, [deviceId]: false },
+        deviceErrorIds: { ...get().deviceErrorIds, [deviceId]: false }
+      });
     } catch (error) {
       console.error('[ControlStore] device command failed', { deviceId, isOn, error });
       useActivityLogStore.getState().addEntry({ deviceId, isOn, success: false });
       set({
         controlError: 'command-failed',
-        localSystemError: error instanceof Error ? error.message : 'Home Assistant command failed'
+        localSystemError: error instanceof Error ? error.message : 'Home Assistant command failed',
+        pendingDeviceIds: { ...get().pendingDeviceIds, [deviceId]: false },
+        deviceErrorIds: { ...get().deviceErrorIds, [deviceId]: true }
       });
     }
   },

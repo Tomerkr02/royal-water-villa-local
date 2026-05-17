@@ -191,6 +191,23 @@ async function requestHomeAssistantService(entityId: string, nextIsOn: boolean, 
   console.info('[HA] Toggle success', { entityId, payload: responsePayload });
 }
 
+async function requestHomeAssistantEntityState(entityId: string) {
+  console.info('[HA] Loading single entity state', { entityId });
+  const response = await fetch(`/api/home-assistant/state?entity_id=${encodeURIComponent(entityId)}`);
+  const payload = (await response.json()) as HomeAssistantState | HomeAssistantServiceResponse;
+
+  if (!response.ok || ('success' in payload && payload.success === false)) {
+    throw new Error('error' in payload && typeof payload.error === 'string' ? payload.error : `Home Assistant state failed with ${response.status}`);
+  }
+
+  if (!('entity_id' in payload) || payload.entity_id !== entityId) {
+    throw new Error(`Home Assistant returned an invalid state for ${entityId}`);
+  }
+
+  console.info('[HA] Single entity state loaded', { entityId, state: payload.state });
+  return payload;
+}
+
 async function requestHomeAssistantCustomService(
   endpoint: 'turn-on' | 'turn-off' | 'toggle',
   entityId: string,
@@ -292,8 +309,11 @@ export class HomeAssistantProvider implements ControlProvider {
 
     try {
       await requestHomeAssistantService(mapping.entityId, nextIsOn);
-      const refreshed = await this.getDevices();
-      return refreshed.states[deviceId];
+      const entityState = await requestHomeAssistantEntityState(mapping.entityId);
+      const states = readStates();
+      const updated = { ...states[deviceId], ...getIsOnFromState(entityState) };
+      writeStates({ ...states, [deviceId]: updated });
+      return updated;
     } catch (error) {
       console.error('[HA] Toggle failed', { deviceId, error });
       throw error;
