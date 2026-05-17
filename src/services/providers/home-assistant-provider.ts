@@ -292,8 +292,11 @@ export class HomeAssistantProvider implements ControlProvider {
 
     try {
       await requestHomeAssistantService(mapping.entityId, nextIsOn);
-      const refreshed = await this.getDevices();
-      return refreshed.states[deviceId];
+      const states = readStates();
+      const updated = { ...states[deviceId], isOn: nextIsOn, isAvailable: true };
+      const next = { ...states, [deviceId]: updated };
+      writeStates(next);
+      return updated;
     } catch (error) {
       console.error('[HA] Toggle failed', { deviceId, error });
       throw error;

@@ -192,6 +192,7 @@ function DeviceTile({ device }: { device: Device }) {
   const { t } = useI18n();
   const states = useControlStore((state) => state.states);
   const setDeviceState = useControlStore((state) => state.setDeviceState);
+  const isPending = useControlStore((state) => Boolean(state.pendingDeviceIds[device.id]));
   const isOn = states?.[device.id]?.isOn ?? false;
   const isAvailable = states?.[device.id]?.isAvailable ?? true;
   const Icon = areaIcons[device.area];
@@ -203,8 +204,13 @@ function DeviceTile({ device }: { device: Device }) {
       whileHover={{ y: -3 }}
       whileTap={{ scale: 0.985 }}
       transition={{ duration: 0.18 }}
-      className={`glass-panel device-tile ${isOn ? 'device-on' : ''} ${!isAvailable ? 'device-unavailable' : ''}`}
+      className={`glass-panel device-tile ${isOn ? 'device-on' : ''} ${!isAvailable ? 'device-unavailable' : ''} ${isPending ? 'device-pending' : ''}`}
     >
+      {isPending ? (
+        <div className="device-pending-indicator" aria-hidden="true">
+          <RefreshCw size={18} className="animate-spin" />
+        </div>
+      ) : null}
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-3">
           <div className="device-icon flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 text-villa-gold">
@@ -221,7 +227,7 @@ function DeviceTile({ device }: { device: Device }) {
         {device.kind === 'switch' ? (
           <ToggleSwitch
             isOn={isOn}
-            disabled={!isAvailable}
+            disabled={!isAvailable || isPending}
             label={`${isOn ? t.lighting.turnOff : t.lighting.turnOn} ${t.devices[device.id]}`}
             onToggle={() => void setDeviceState(device.id, !isOn)}
           />

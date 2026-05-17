@@ -1,0 +1,23 @@
+name: Royal Water Villa
+version: "1.0.0"
+slug: royal_water_villa
+description: Luxury tablet smart-home control UI for Royal Water Villa using the local Home Assistant API.
+arch:
+  - aarch64
+  - amd64
+  - armv7
+startup: application
+boot: auto
+init: false
+ports:
+  3000/tcp: 3000
+ports_description:
+  3000/tcp: Royal Water Villa tablet UI
+webui: "http://[HOST]:[PORT:3000]"
+watchdog: "http://[HOST]:[PORT:3000]"
+options:
+  HOME_ASSISTANT_BASE_URL: "http://homeassistant.local:8123"
+  HOME_ASSISTANT_TOKEN: ""
+schema:
+  HOME_ASSISTANT_BASE_URL: str
+  HOME_ASSISTANT_TOKEN: password
