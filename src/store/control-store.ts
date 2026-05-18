@@ -133,7 +133,7 @@ export const useControlStore = create<ControlStore>((set, get) => ({
       useActivityLogStore.getState().addEntry({ deviceId, isOn, success: false });
       set({
         controlError: 'command-failed',
-        localSystemError: error instanceof Error ? error.message : 'Home Assistant command failed',
+        localSystemError: error instanceof Error ? error.message : 'Device command failed',
         pendingDeviceIds: { ...get().pendingDeviceIds, [deviceId]: false },
         deviceErrorIds: { ...get().deviceErrorIds, [deviceId]: true }
       });
@@ -158,7 +158,7 @@ export const useControlStore = create<ControlStore>((set, get) => ({
       console.error('[ControlStore] fan percentage failed', { deviceId, percentage, error });
       set({
         controlError: 'command-failed',
-        localSystemError: error instanceof Error ? error.message : 'Home Assistant fan command failed'
+        localSystemError: error instanceof Error ? error.message : 'Fan command failed'
       });
     }
   },
@@ -181,7 +181,7 @@ export const useControlStore = create<ControlStore>((set, get) => ({
       console.error('[ControlStore] climate power failed', { deviceId, isOn, error });
       set({
         controlError: 'command-failed',
-        localSystemError: error instanceof Error ? error.message : 'Home Assistant climate command failed'
+        localSystemError: error instanceof Error ? error.message : 'Climate command failed'
       });
     }
   },
@@ -204,7 +204,7 @@ export const useControlStore = create<ControlStore>((set, get) => ({
       console.error('[ControlStore] climate mode failed', { deviceId, hvacMode, error });
       set({
         controlError: 'command-failed',
-        localSystemError: error instanceof Error ? error.message : 'Home Assistant climate mode command failed'
+        localSystemError: error instanceof Error ? error.message : 'Climate mode command failed'
       });
     }
   },
