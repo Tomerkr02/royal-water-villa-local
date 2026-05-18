@@ -191,7 +191,7 @@ function TimeStepper({
 function DeviceTile({ device }: { device: Device }) {
   const { t } = useI18n();
   const states = useControlStore((state) => state.states);
-  const setDeviceState = useControlStore((state) => state.setDeviceState);
+  const toggleDeviceState = useControlStore((state) => state.toggleDeviceState);
   const isPending = useControlStore((state) => Boolean(state.pendingDeviceIds[device.id]));
   const hasError = useControlStore((state) => Boolean(state.deviceErrorIds[device.id]));
   const isOn = states?.[device.id]?.isOn ?? false;
@@ -230,7 +230,7 @@ function DeviceTile({ device }: { device: Device }) {
             isOn={isOn}
             disabled={!isAvailable || isPending}
             label={`${isOn ? t.lighting.turnOff : t.lighting.turnOn} ${t.devices[device.id]}`}
-            onToggle={() => void setDeviceState(device.id, !isOn)}
+            onToggle={() => void toggleDeviceState(device.id)}
           />
         ) : null}
       </div>

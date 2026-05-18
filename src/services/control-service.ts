@@ -21,6 +21,14 @@ class ControlService {
     return this.provider.setDeviceState(deviceId, { isOn });
   }
 
+  async toggleDeviceState(deviceId: DeviceId) {
+    if (!this.provider.toggleDeviceState) {
+      const result = await this.provider.getDevices();
+      return this.provider.setDeviceState(deviceId, { isOn: !result.states[deviceId]?.isOn });
+    }
+    return this.provider.toggleDeviceState(deviceId);
+  }
+
   setFanPercentage(deviceId: DeviceId, percentage: number) {
     if (!this.provider.setFanPercentage) {
       return this.provider.setDeviceState(deviceId, { percentage, isOn: percentage > 0 });

@@ -22,6 +22,7 @@ interface ControlStore {
   loadDevices: () => Promise<void>;
   syncDevices: () => Promise<void>;
   setDeviceState: (deviceId: DeviceId, isOn: boolean) => Promise<void>;
+  toggleDeviceState: (deviceId: DeviceId) => Promise<void>;
   setFanPercentage: (deviceId: DeviceId, percentage: number) => Promise<void>;
   setClimatePower: (deviceId: DeviceId, isOn: boolean) => Promise<void>;
   setClimateHvacMode: (deviceId: DeviceId, hvacMode: string) => Promise<void>;
@@ -134,6 +135,56 @@ export const useControlStore = create<ControlStore>((set, get) => ({
       set({
         controlError: 'command-failed',
         localSystemError: error instanceof Error ? error.message : 'Device command failed',
+        pendingDeviceIds: { ...get().pendingDeviceIds, [deviceId]: false },
+        deviceErrorIds: { ...get().deviceErrorIds, [deviceId]: true }
+      });
+    }
+  },
+
+  async toggleDeviceState(deviceId) {
+    if (get().pendingDeviceIds[deviceId]) {
+      return;
+    }
+
+    if (get().isOffline) {
+      console.error('[ControlStore] blocked toggle while offline', { deviceId });
+      useActivityLogStore.getState().addEntry({ deviceId, isOn: false, success: false });
+      set({ controlError: 'offline' });
+      return;
+    }
+
+    set({
+      pendingDeviceIds: { ...get().pendingDeviceIds, [deviceId]: true },
+      deviceErrorIds: { ...get().deviceErrorIds, [deviceId]: false }
+    });
+
+    try {
+      let updated;
+      try {
+        updated = await controlService.toggleDeviceState(deviceId);
+      } catch (firstError) {
+        console.warn('[ControlStore] retrying device toggle once', { deviceId, firstError });
+        await new Promise((resolve) => window.setTimeout(resolve, COMMAND_RETRY_DELAY_MS));
+        updated = await controlService.toggleDeviceState(deviceId);
+      }
+
+      const states = get().states;
+      if (states) {
+        set({ states: { ...states, [deviceId]: updated } });
+      }
+      void get().syncDevices();
+      useActivityLogStore.getState().addEntry({ deviceId, isOn: updated.isOn, success: true });
+      set({
+        controlError: null,
+        pendingDeviceIds: { ...get().pendingDeviceIds, [deviceId]: false },
+        deviceErrorIds: { ...get().deviceErrorIds, [deviceId]: false }
+      });
+    } catch (error) {
+      console.error('[ControlStore] device toggle failed', { deviceId, error });
+      useActivityLogStore.getState().addEntry({ deviceId, isOn: false, success: false });
+      set({
+        controlError: 'command-failed',
+        localSystemError: error instanceof Error ? error.message : 'Device toggle failed',
         pendingDeviceIds: { ...get().pendingDeviceIds, [deviceId]: false },
         deviceErrorIds: { ...get().deviceErrorIds, [deviceId]: true }
       });

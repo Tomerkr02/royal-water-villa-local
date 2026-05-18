@@ -106,6 +106,39 @@ async function fetchKnownDeviceStates(cachedStates: DeviceStateMap): Promise<Dev
   }
 }
 
+async function fetchCurrentDeviceState(deviceId: DeviceId): Promise<boolean | null> {
+  const mapping = tuyaDeviceMappings[deviceId];
+  if (!mapping) {
+    console.warn('[CloudProvider] current state unavailable: missing mapping', { deviceKey: deviceId });
+    return null;
+  }
+
+  try {
+    const response = await fetch(`${DEVICE_ACCESS_ENDPOINT}?deviceId=${encodeURIComponent(mapping.tuyaDeviceId)}`, {
+      method: 'GET'
+    });
+
+    const payload = (await response.json()) as TuyaDeviceAccessResponse;
+    console.info('[CloudProvider] current state response', {
+      deviceKey: deviceId,
+      tuyaDeviceId: mapping.tuyaDeviceId,
+      commandCode: mapping.commandCode,
+      status: response.status,
+      payload
+    });
+
+    if (!response.ok) {
+      throw new Error(`Device access failed for ${deviceId}: ${response.status}`);
+    }
+
+    const status = payload.result?.status?.find((item) => item.code === mapping.commandCode);
+    return typeof status?.value === 'boolean' ? status.value : null;
+  } catch (error) {
+    console.error('[CloudProvider] current state failed', { deviceKey: deviceId, error });
+    return null;
+  }
+}
+
 async function sendTuyaCommand(deviceId: DeviceId, value: boolean | number | string) {
   const mapping = tuyaDeviceMappings[deviceId];
   if (!mapping) {
@@ -124,6 +157,12 @@ async function sendTuyaCommand(deviceId: DeviceId, value: boolean | number | str
     ]
   };
 
+  console.info('[CloudProvider] Tuya command payload', {
+    deviceKey: deviceId,
+    requestedAction: value === true ? 'on' : value === false ? 'off' : 'value',
+    payload: body
+  });
+
   const response = await fetch(CONTROL_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -136,6 +175,12 @@ async function sendTuyaCommand(deviceId: DeviceId, value: boolean | number | str
   } catch {
     payload = null;
   }
+
+  console.info('[CloudProvider] API response', {
+    deviceKey: deviceId,
+    status: response.status,
+    payload
+  });
 
   if (!response.ok || payload?.success === false) {
     const message = payload?.error ?? payload?.message ?? `Tuya control failed with ${response.status}`;
@@ -159,7 +204,13 @@ export class CloudProvider implements ControlProvider {
 
   async setDeviceState(deviceId: DeviceId, state: Partial<DeviceState>) {
     const nextIsOn = Boolean(state.isOn);
-    console.info('[CloudProvider] setDeviceState request', { deviceId, isOn: nextIsOn });
+    const cachedState = readStates()[deviceId]?.isOn ?? false;
+    console.info('[CloudProvider] setDeviceState request', {
+      deviceKey: deviceId,
+      currentState: cachedState,
+      requestedAction: nextIsOn ? 'on' : 'off',
+      isOn: nextIsOn
+    });
     try {
       await sendTuyaCommand(deviceId, nextIsOn);
 
@@ -174,12 +225,54 @@ export class CloudProvider implements ControlProvider {
     }
   }
 
+  async toggleDeviceState(deviceId: DeviceId) {
+    const states = readStates();
+    const cachedState = states[deviceId]?.isOn ?? false;
+    const realState = await fetchCurrentDeviceState(deviceId);
+    const currentState = realState ?? cachedState;
+    const nextIsOn = !currentState;
+
+    console.info('[CloudProvider] toggleDeviceState request', {
+      deviceKey: deviceId,
+      currentState,
+      cachedState,
+      realState,
+      requestedAction: nextIsOn ? 'on' : 'off'
+    });
+
+    try {
+      await sendTuyaCommand(deviceId, nextIsOn);
+      const next = readStates();
+      next[deviceId] = { ...next[deviceId], isOn: nextIsOn };
+      writeStates(next);
+      console.info('[CloudProvider] toggleDeviceState success', {
+        deviceKey: deviceId,
+        previousState: currentState,
+        isOn: nextIsOn
+      });
+      return next[deviceId];
+    } catch (error) {
+      console.error('[CloudProvider] toggleDeviceState failed', {
+        deviceKey: deviceId,
+        currentState,
+        requestedAction: nextIsOn ? 'on' : 'off',
+        error
+      });
+      throw error;
+    }
+  }
+
   async turnOffAll() {
     const states = readStates();
     const next = { ...states };
 
     for (const device of devices) {
       try {
+        console.info('[CloudProvider] turnOffAll request', {
+          deviceKey: device.id,
+          requestedAction: 'off',
+          currentState: next[device.id]?.isOn ?? false
+        });
         await sendTuyaCommand(device.id, false);
         next[device.id] = { ...next[device.id], isOn: false };
       } catch (error) {
