@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Armchair,
@@ -188,23 +188,25 @@ function TimeStepper({
   );
 }
 
-function DeviceTile({ device }: { device: Device }) {
+const DeviceTile = memo(function DeviceTile({ device }: { device: Device }) {
   const { t } = useI18n();
-  const states = useControlStore((state) => state.states);
+  const state = useControlStore((store) => store.states?.[device.id]);
   const toggleDeviceState = useControlStore((state) => state.toggleDeviceState);
   const isPending = useControlStore((state) => Boolean(state.pendingDeviceIds[device.id]));
   const hasError = useControlStore((state) => Boolean(state.deviceErrorIds[device.id]));
-  const isOn = states?.[device.id]?.isOn ?? false;
-  const isAvailable = states?.[device.id]?.isAvailable ?? true;
+  const renderCount = useRef(0);
+  const isOn = state?.isOn ?? false;
+  const isAvailable = state?.isAvailable ?? true;
   const Icon = areaIcons[device.area];
   const statusLabel = !isAvailable ? t.common.unavailable : isOn ? t.common.deviceOn : t.common.deviceOff;
 
+  if (import.meta.env.DEV) {
+    renderCount.current += 1;
+    console.debug('[Perf] DeviceTile render', { deviceId: device.id, renderCount: renderCount.current });
+  }
+
   return (
-    <motion.div
-      layout
-      whileHover={{ y: -3 }}
-      whileTap={{ scale: 0.985 }}
-      transition={{ duration: 0.18 }}
+    <div
       className={`glass-panel device-tile ${isOn ? 'device-on' : ''} ${!isAvailable ? 'device-unavailable' : ''} ${isPending ? 'device-pending' : ''} ${hasError ? 'device-error' : ''}`}
     >
       {isPending ? (
@@ -236,9 +238,9 @@ function DeviceTile({ device }: { device: Device }) {
       </div>
       {device.kind === 'fan' ? <FanControls deviceId={device.id} /> : null}
       {device.kind === 'climate' ? <ClimateControls deviceId={device.id} /> : null}
-    </motion.div>
+    </div>
   );
-}
+});
 
 function FanControls({ deviceId }: { deviceId: DeviceId }) {
   const { t } = useI18n();

@@ -109,6 +109,11 @@ export const useControlStore = create<ControlStore>((set, get) => ({
       deviceErrorIds: { ...get().deviceErrorIds, [deviceId]: false }
     });
 
+    const startedAt = performance.now();
+    if (import.meta.env.DEV) {
+      console.debug('[Perf] action start', { deviceId, action: isOn ? 'turn-on' : 'turn-off' });
+    }
+
     try {
       let updated;
       try {
@@ -122,8 +127,14 @@ export const useControlStore = create<ControlStore>((set, get) => ({
       if (states) {
         set({ states: { ...states, [deviceId]: updated } });
       }
-      void get().syncDevices();
       useActivityLogStore.getState().addEntry({ deviceId, isOn, success: true });
+      if (import.meta.env.DEV) {
+        console.debug('[Perf] action end', {
+          deviceId,
+          action: isOn ? 'turn-on' : 'turn-off',
+          durationMs: Math.round(performance.now() - startedAt)
+        });
+      }
       set({
         controlError: null,
         pendingDeviceIds: { ...get().pendingDeviceIds, [deviceId]: false },
@@ -158,6 +169,11 @@ export const useControlStore = create<ControlStore>((set, get) => ({
       deviceErrorIds: { ...get().deviceErrorIds, [deviceId]: false }
     });
 
+    const startedAt = performance.now();
+    if (import.meta.env.DEV) {
+      console.debug('[Perf] action start', { deviceId, action: 'toggle' });
+    }
+
     try {
       let updated;
       try {
@@ -172,8 +188,14 @@ export const useControlStore = create<ControlStore>((set, get) => ({
       if (states) {
         set({ states: { ...states, [deviceId]: updated } });
       }
-      void get().syncDevices();
       useActivityLogStore.getState().addEntry({ deviceId, isOn: updated.isOn, success: true });
+      if (import.meta.env.DEV) {
+        console.debug('[Perf] action end', {
+          deviceId,
+          action: 'toggle',
+          durationMs: Math.round(performance.now() - startedAt)
+        });
+      }
       set({
         controlError: null,
         pendingDeviceIds: { ...get().pendingDeviceIds, [deviceId]: false },

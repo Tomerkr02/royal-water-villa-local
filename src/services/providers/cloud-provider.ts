@@ -114,11 +114,19 @@ async function fetchCurrentDeviceState(deviceId: DeviceId): Promise<boolean | nu
   }
 
   try {
+    const startedAt = performance.now();
     const response = await fetch(`${DEVICE_ACCESS_ENDPOINT}?deviceId=${encodeURIComponent(mapping.tuyaDeviceId)}`, {
       method: 'GET'
     });
 
     const payload = (await response.json()) as TuyaDeviceAccessResponse;
+    if (import.meta.env.DEV) {
+      console.debug('[Perf] API response timing', {
+        deviceKey: deviceId,
+        endpoint: DEVICE_ACCESS_ENDPOINT,
+        durationMs: Math.round(performance.now() - startedAt)
+      });
+    }
     console.info('[CloudProvider] current state response', {
       deviceKey: deviceId,
       tuyaDeviceId: mapping.tuyaDeviceId,
@@ -163,6 +171,7 @@ async function sendTuyaCommand(deviceId: DeviceId, value: boolean | number | str
     payload: body
   });
 
+  const startedAt = performance.now();
   const response = await fetch(CONTROL_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -174,6 +183,15 @@ async function sendTuyaCommand(deviceId: DeviceId, value: boolean | number | str
     payload = (await response.json()) as TuyaControlResponse;
   } catch {
     payload = null;
+  }
+
+  if (import.meta.env.DEV) {
+    console.debug('[Perf] API response timing', {
+      deviceKey: deviceId,
+      endpoint: CONTROL_ENDPOINT,
+      requestedAction: value === true ? 'on' : value === false ? 'off' : 'value',
+      durationMs: Math.round(performance.now() - startedAt)
+    });
   }
 
   console.info('[CloudProvider] API response', {
